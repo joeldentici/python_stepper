@@ -12,9 +12,11 @@ algebraic stepper later.
 Next Steps:
 
 1. Add data structure to store history of stack calls.
-	* Inside of the function def
-	* Inside of lambdas as well
-	* Show args and return values
+	* Inside of lambdas as well (not done)
+		* Abstract out the transformation so it returns
+		the items needed to construct the modified AST node
+		and then create two visitors, one for function def,
+		one for lambdas
 
 '''
 
@@ -31,9 +33,17 @@ that we can see the state of all variables on the 'stack'
 at each function application.
 '''
 class AddEnv(ast.NodeTransformer):
+	def __init__(self):
+		ast.NodeTransformer.__init__(self)
+		#stack of function definition names being transformed
+		self.fns = []
+
 	def visit_FunctionDef(self, node):
-		#simple POC right now
-		#just print a function's name when it is called
+		#store name while we are transforming this definition
+		self.fns.append(node.name)
+
+		#visit children too!
+		self.generic_visit(node)
 
 		#extract info from function def
 		fn = node.name 
@@ -41,27 +51,47 @@ class AddEnv(ast.NodeTransformer):
 		args = node.args.args
 		body = node.body
 
-		#argNames = []
+		#construct the environment of the application
 		argNames = [ast.Str(arg.id) for arg in args]
 		argVals = args
 		newEnv = ast.Dict(argNames, argVals)
 
+		#push a function call onto stepper's call stack, this will record the *lexical* environment of
+		#the application (so arguments and the closure environment will be in the reported environment)
+		pushEnv = ast.Call(ast.Name('stepper_lib.push_call', ast.Load()), [ast.Str(fn), newEnv], [], None, None)
 
-		pushEnv = ast.Call(ast.Name('stepper_lib.push_env', ast.Load()), [ast.Str(fn), newEnv], [], None, None)
-
-		retVal = ast.Assign([ast.Name('__step_ret', ast.Store())], body[-1].value)
-
-		logRet = ast.Call(ast.Name('stepper_lib.pop_env', ast.Load()), [ast.Str(fn), ast.Name('__step_ret', ast.Load())], [], None, None)
-
-
-		retStmt = ast.Return(ast.Name('__step_ret', ast.Load()))
-
-
-		#print the function call line, then evaluate the body in resulting function
-		stmts = [ast.Expr(pushEnv)] + body[0:-2] + [retVal, ast.Expr(logRet), retStmt]
+		#create the new function definition
+		stmts = [ast.Expr(pushEnv)] + body
 		wrapped = ast.FunctionDef(fn, node.args, stmts, node.decorator_list)
 
-		return wrapped
+		#store the environment this function was defined in
+		close = ast.Call(ast.Name('stepper_lib.store_env', ast.Load()), [ast.Str(fn)], [], None, None)
+
+		#replace the definition with the new definition and the call to store the env
+		newNode = [wrapped, ast.Expr(close)]
+
+		#no longer transforming this definition
+		self.fns.pop()
+
+		return newNode
+
+	def visit_Return(self, node):
+		#visit children
+		self.generic_visit(node)
+
+		#get name of function this statement is in
+		fn = self.fns[-1]
+
+		#record the return value with the stepper library, then return it.
+		#we are careful to assign it to a temporary variable so we don't
+		#evaluate the return expression more than once (which would be bad
+		#if it had side effects)
+		val = ast.Assign([ast.Name('__step_ret', ast.Store())], node.value)
+		logRet = ast.Call(ast.Name('stepper_lib.pop_call', ast.Load()), [ast.Str(fn), ast.Name('__step_ret', ast.Load())], [], None, None)
+		retStmt = ast.Return(ast.Name('__step_ret', ast.Load()))
+
+		return [val, ast.Expr(logRet), retStmt]
+
 
 '''
 transform :: string -> string
@@ -78,7 +108,7 @@ def transform(src):
 	#generate output source code
 	return astor.to_source(new_node)
 
-#transform stdin and print it to stdout.
+#output the transformed program to stdout
 print 'import stepper_lib'
 print transform(sys.stdin.read())
-print 'stepper_lib.print_state()'
+print 'stepper_lib.print_call_history()'
