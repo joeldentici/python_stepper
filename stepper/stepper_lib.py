@@ -29,6 +29,9 @@ def push_call(fid, env):
 		tmp.update(env)
 		env = tmp
 
+	if callable(fid):
+		fid = fid.__name__
+
 	call_history.append(('Call', fid, env))
 	envs.append(env)
 
@@ -42,8 +45,11 @@ in the call history.
 def pop_call(fid, ret):
 	global env, call_history
 
-	if (callable(ret)):
+	if callable(ret):
 		ret = ret.__name__
+
+	if callable(fid):
+		fid = fid.__name__
 
 	call_history.append(('Return', fid, ret))
 	envs.pop()
@@ -72,4 +78,4 @@ the program started.
 '''
 def print_call_history():
 	for (t, f, v) in call_history:
-		print t, f, v
+		print(t, f, v)

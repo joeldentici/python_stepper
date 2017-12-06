@@ -52,20 +52,20 @@ class AddEnv(ast.NodeTransformer):
 		body = node.body
 
 		#construct the environment of the application
-		argNames = [ast.Str(arg.id) for arg in args]
+		argNames = [ast.Str(arg.arg) for arg in args]
 		argVals = args
 		newEnv = ast.Dict(argNames, argVals)
 
 		#push a function call onto stepper's call stack, this will record the *lexical* environment of
 		#the application (so arguments and the closure environment will be in the reported environment)
-		pushEnv = ast.Call(ast.Name('stepper_lib.push_call', ast.Load()), [ast.Str(fn), newEnv], [], None, None)
+		pushEnv = ast.Call(ast.Name('stepper_lib.push_call', ast.Load()), [ast.Name(fn, ast.Load()), newEnv], [], None, None)
 
 		#create the new function definition
 		stmts = [ast.Expr(pushEnv)] + body
-		wrapped = ast.FunctionDef(fn, node.args, stmts, node.decorator_list)
+		wrapped = ast.FunctionDef(fn, node.args, stmts, node.decorator_list, None)
 
 		#store the environment this function was defined in
-		close = ast.Call(ast.Name('stepper_lib.store_env', ast.Load()), [ast.Str(fn)], [], None, None)
+		close = ast.Call(ast.Name('stepper_lib.store_env', ast.Load()), [ast.Name(fn, ast.Load())], [], None, None)
 
 		#replace the definition with the new definition and the call to store the env
 		newNode = [wrapped, ast.Expr(close)]
@@ -87,7 +87,7 @@ class AddEnv(ast.NodeTransformer):
 		#evaluate the return expression more than once (which would be bad
 		#if it had side effects)
 		val = ast.Assign([ast.Name('__step_ret', ast.Store())], node.value)
-		logRet = ast.Call(ast.Name('stepper_lib.pop_call', ast.Load()), [ast.Str(fn), ast.Name('__step_ret', ast.Load())], [], None, None)
+		logRet = ast.Call(ast.Name('stepper_lib.pop_call', ast.Load()), [ast.Name(fn, ast.Load()), ast.Name('__step_ret', ast.Load())], [], None, None)
 		retStmt = ast.Return(ast.Name('__step_ret', ast.Load()))
 
 		return [val, ast.Expr(logRet), retStmt]
@@ -109,6 +109,6 @@ def transform(src):
 	return astor.to_source(new_node)
 
 #output the transformed program to stdout
-print 'import stepper_lib'
-print transform(sys.stdin.read())
-print 'stepper_lib.print_call_history()'
+print('import stepper_lib')
+print(transform(sys.stdin.read()))
+print('stepper_lib.print_call_history()')
