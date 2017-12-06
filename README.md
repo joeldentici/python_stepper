@@ -1,5 +1,5 @@
 # Python Stepper
-We are working on implementing an algebraic stepper for Python 3, similar to the one for Racket (previously known as DrScheme).
+We are working on implementing an algebraic stepper for Python 3, similar to the one for Racket (previously known as PLT Scheme).
 
 ## What is a stepper?
 A stepper is a tool that allows a programmer to see how their program is evaluated. It works by rewriting the program using algebraic transformations, that preserve its semantics, but allow the reconstruction of the source code expressions at runtime. It then allows the programmer to see how reduction rules are applied to expressions to evaluate them.
