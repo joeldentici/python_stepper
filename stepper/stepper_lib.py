@@ -1,3 +1,4 @@
+import sys
 '''
 stepper_lib
 
@@ -11,7 +12,7 @@ The functions in this library record the evaluation of the program.
 call_history = []
 #environment stack (like call stack, only
 #the active activation records are stored)
-envs = [{}]
+envs = [({}, '')]
 #store environments (for closures)
 stored_envs = {}
 
@@ -33,7 +34,8 @@ def push_call(fid, env):
 		fid = fid.__name__
 
 	call_history.append(('Call', fid, env))
-	envs.append(env)
+	envs.append((env, fid))
+	print_stack('call')
 
 '''
 pop_call :: (any, Dict string any) -> ()
@@ -52,7 +54,9 @@ def pop_call(fid, ret):
 		fid = fid.__name__
 
 	call_history.append(('Return', fid, ret))
+	print_stack('return', ret)
 	envs.pop()
+
 
 '''
 store_env :: any -> ()
@@ -67,7 +71,7 @@ in a table and look it up when the function is evaluated.
 '''
 def store_env(fid):
 	global stored_envs
-	stored_envs[fid] = envs[-1]
+	stored_envs[fid] = envs[-1][0]
 
 '''
 print_call_history :: () -> ()
@@ -77,5 +81,24 @@ which prints out the historical call stack since
 the program started.
 '''
 def print_call_history():
+	return
 	for (t, f, v) in call_history:
 		print(t, f, v)
+
+def errprint(*args, **kwargs):
+	print(*args, file=sys.stderr, **kwargs)
+
+def print_stack(what, ret = None):
+	top_border = '-' * 5
+	bot_border = '-' * (10 + len(what))
+
+	errprint(top_border + what + top_border)
+	for depth,(env,name) in enumerate(envs[1:]):
+		tab = '\t' * depth
+		if ret and depth == len(envs[1:]) - 1:
+			errprint(tab + name, ret)
+		else:
+			errprint(tab + name, env)
+
+	errprint(bot_border)
+	errprint('')

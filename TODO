@@ -2,7 +2,8 @@
 
 Fall Quarter:
 
-1. Convert to python 3
+1. Convert to python 3 (DONE)
+1.5. Make work with lambdas
 2. Print stack state after every function call. Print this to stderr, not stdout, so redirection can be used to clean up interleaving
 3. Annotate operators
 	* Pretty much every statement or expression that is not a function call
