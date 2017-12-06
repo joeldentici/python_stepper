@@ -36,7 +36,7 @@ where {NUMBER} are number literals in Python 3.
 
 ## Todo
 
-- [ x ] Be able to transform Python 3 programs (PoC)
+- [x] Be able to transform Python 3 programs (PoC)
 - [ ] Annotation of lambda expressions and function definitions
 - [ ] Annotation of application
 - [ ] Annotation of primitive expressions
