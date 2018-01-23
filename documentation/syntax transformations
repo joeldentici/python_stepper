@@ -1,0 +1,40 @@
+
+Function Definition
+	Input:
+		def <function-name>(<parameter-list>):
+			<stmt>+
+
+	Output:
+		def <function-name>(<parameter-list>):
+			<instrument(stmt)>+
+
+		stepper_lib.function_def(<function-name>)
+
+	Current Limitations:
+		* Keyword args not supported
+		* Decorator syntax not supported
+
+Function Call (application)
+	Input:
+		<function-expr>(<expr-list>)
+
+	Output:
+		stepper_lib.function_call(<function-expr>, <expr-list>)
+
+	Current Limitations:
+		* Keyword args not supported
+
+Lambda expression
+	Input:
+		lambda <parmater-list>: <expr>
+
+	Output:
+		stepper_lib.lambda_expression(lambda <parmater-list>: <expr>)
+
+Assignment
+	Input:
+		<assignable-expr-list> = <expr>
+
+	Output:
+		<assignable-expr-list> = stepper_lib.assignment(<str(assignable-expr-list)>, <instrument(expr)>)
+
