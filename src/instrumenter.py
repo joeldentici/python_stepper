@@ -136,3 +136,20 @@ class InstrumentSource(ast.NodeTransformer):
 		)
 
 		return node
+
+	def visit_BinOp(self, node):
+		expr_src = ast.Str(astor.to_source(node, '\t').strip())
+
+		self.generic_visit(node)
+		if not self.should_transform("binary_operation"):
+			return node
+
+		left = node.left
+		op = ast.Str(node.op.__class__.__name__)
+		right = node.right
+
+		return ast.Call(\
+			ast.Name('stepper_lib.binary_operation', ast.Load()),\
+			[expr_src, left, op, right],\
+			[]\
+		)
