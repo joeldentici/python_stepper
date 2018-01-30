@@ -1,3 +1,4 @@
+import re
 
 '''
 stepper_lib
@@ -17,6 +18,19 @@ class CommandlineReporter:
 		pass
 
 	def report(self, val):
+		BOLD = '\033[1m'
+		ENDC = '\033[0m'
+		YELLOW = '\033[93m'
+
+		START = BOLD + YELLOW
+
+		val = re.sub(
+			r"(.*)\(\*\)(.*)\(\*\)(.*)",
+			r"\1" + START + r"\2" + ENDC + r"\3",
+			val,
+			flags=re.DOTALL
+		)
+
 		print(val)
 		input()
 
@@ -27,6 +41,7 @@ class ProgramContext:
 		self.knownFuncs = {}
 		self.active = []
 		self.lastReport = None
+		self.stmts = []
 
 
 	def nextStatement(self, stmt):
@@ -38,8 +53,12 @@ class ProgramContext:
 		if len(self.active):
 			self.active[-1].addStatement(stmt)
 
+		self.stmts.append(stmt)
+
 		stmt.accept(self)
 		result = stmt.reduce()
+
+		self.stmts.pop()
 
 		if root:
 			self.rootStmt = None
@@ -59,6 +78,13 @@ class ProgramContext:
 		if value != self.lastReport:
 			self.lastReport = value
 			self.reporter.report(value)
+
+	def activeStatement(self):
+		if len(self.stmts):
+			return self.stmts[-1]
+		else:
+			return None
+
 
 def visit(visitor, obj):
 	mName = 'visit'
@@ -94,6 +120,12 @@ class Statement:
 
 	def show(self, depth):
 		raise Exception('Virtual show called!')
+
+	def active(self, val):
+		if self.context.activeStatement() == self:
+			return '(*)' + val + '(*)'
+		else:
+			return val
 
 class Expression:
 	def __init__(self, context):
@@ -201,7 +233,7 @@ class ReturnStatement(Statement):
 		return result
 
 	def show(self, depth):
-		return indent(depth, 'return ' + self.value.show(depth))
+		return self.active(indent(depth, 'return ' + self.value.show(depth)))
 
 
 class BinaryOperation(Expression):
@@ -246,7 +278,7 @@ class ExprStatement(Statement):
 		return self.expr.reduce()
 
 	def show(self, depth):
-		return self.expr.show(depth)
+		return self.active(indent(depth, self.expr.show(depth)))
 
 class Value(Expression):
 	def __init__(self, context, value):
