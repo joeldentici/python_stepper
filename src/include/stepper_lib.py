@@ -12,6 +12,345 @@ return the result of the reduction. Since Python is
 strictly evaluated, every reduction step results in a value.
 '''
 
+class CommandlineReporter:
+	def __init__(self):
+		pass
+
+	def report(self, val):
+		print(val)
+		input()
+
+class ProgramContext:
+	def __init__(self, reporter):
+		self.reporter = reporter
+		self.rootStmt = None
+		self.knownFuncs = {}
+		self.active = []
+
+
+	def nextStatement(self, stmt):
+		root = False
+		if self.rootStmt == None:
+			root = True
+			self.rootStmt = stmt
+
+		if len(self.active):
+			self.active[-1].addStatement(stmt)
+
+		stmt.accept(self)
+		result = stmt.reduce()
+
+		if root:
+			self.rootStmt = None
+
+		return result
+
+	def visit(self, stmt):
+		pass
+
+	def visit_FunctionDef(self, stmt):
+		self.knownFuncs[stmt.fn] = stmt
+
+
+	def report(self):
+		self.reporter.report(self.rootStmt.show(0))
+
+def visit(visitor, obj):
+	mName = 'visit'
+	sName = 'visit_' + obj.__class__.__name__
+	if hasattr(visitor, sName):
+		mName = sName
+
+	method = getattr(visitor,mName)
+
+	return method(obj)
+
+def makeExpr(ctx, v):
+	if isinstance(v, Expression):
+		return v
+
+	return Value(ctx, v)
+
+def val_show(v):
+	return repr(v)
+
+class Statement:
+	def __init__(self, context):
+		self.context = context
+
+	def accept(self, visitor):
+		return visit(visitor, self)
+
+	def reduce(self):
+		raise Exception('Virtual reduce called!')
+
+	def show(self, depth):
+		raise Exception('Virtual show called!')
+
+class Expression:
+	def __init__(self, context):
+		self.context = context
+
+	def accept(self, visitor):
+		return visit(visitor, self)
+
+	def reduce(self):
+		raise Exception('Virtual reduce called!')
+
+	def show(self, depth):
+		raise Exception('Virtual show called!')
+
+class FunctionDef(Statement):
+	def __init__(self, context, name, stmts, params, fn):
+		Statement.__init__(self, context)
+		self.name = name
+		self.stmts = stmts
+		self.params = params
+		self.fn = fn
+
+	def reduce(self):
+		pass
+
+	def show(self, depth):
+		return ''
+
+class LambdaExpression(Expression):
+	def __init__(self, context):
+		Expression.__init__(self, context)
+
+class AssignmentStatement(Statement):
+	def __init__(self, context):
+		Statement.__init__(self, context)
+
+class FunctionCall(Expression):
+	def __init__(self, context, fn, args):
+		Expression.__init__(self, context)
+		self.fn = fn
+		self.args = [makeExpr(self.context, x) for x in args]
+		self.result = None
+		self.seenStatements = []
+		self.step = 'show_call'
+		self.called = self.fn.show(0)
+
+	def addStatement(self, stmt):
+		self.seenStatements.append(stmt)
+
+	def reduce(self):
+		# evaluate arguments
+		fn = self.fn.reduce()
+		args = []
+		for arg in self.args:
+			args.append(arg.reduce())
+
+		# show evaluation of function if we know about it
+		if fn in self.context.knownFuncs:
+			info = self.context.knownFuncs[fn]
+			self.params = info.params
+			self.allStatements = info.stmts
+			self.name = info.name
+			self.step = 'user_function'
+			self.context.report()
+
+		# make function call
+		self.context.active.append(self)
+		self.result = fn(*args)
+		self.context.active.pop()
+		self.context.report()
+
+		return self.result
+
+	def show(self, depth):
+		if self.result != None:
+			return val_show(self.result)
+
+		if self.step == 'show_call':
+			return self.called + '(' + ', '.join(a.show(0) for a in self.args) + ')'
+
+		if self.step == 'user_function':
+			header = 'def ' + self.name + '(' + ', '.join(self.showArg(p, a) for p, a in zip(self.params, self.args)) + '):'
+			seen = '\n'.join('*' + x.show(0) for x in self.seenStatements)
+			num = len(self.seenStatements)
+			rest = '\n'.join(self.allStatements[num:])
+
+			if len(seen):
+				seen = '\n' + seen
+			if len(rest):
+				rest = '\n' + rest
+
+			return '<@ ' + header + seen + rest + ' @>'
+
+	def showArg(self, p, a):
+		return p + '=' + a.show(0)
+
+
+class ReturnStatement(Statement):
+	def __init__(self, context, value):
+		Statement.__init__(self, context)
+		self.value = makeExpr(context, value)
+
+	def reduce(self):
+		result = self.value.reduce()
+		return result
+
+	def show(self, depth):
+		return 'return ' + self.value.show(0)
+
+
+class BinaryOperation(Expression):
+	def __init__(self, context, op, left, right):
+		Expression.__init__(self, context)
+		self.left = makeExpr(context, left)
+		self.op = op
+		self.right = makeExpr(context, right)
+		self.value = None
+
+	def reduce(self):
+		ops = {
+			'Add': lambda x,y: x + y,
+			'Mult': lambda x,y: x * y
+		}
+
+		left = self.left.reduce()
+		right = self.right.reduce()
+		self.value = ops[self.op](left, right)
+		self.context.report()
+
+		return self.value
+
+	def show(self, depth):
+		ops = {
+			'Add': ' + ',
+			'Mult': ' * '
+		}
+
+		if self.value != None:
+			return val_show(self.value)
+		else:
+			return self.left.show(0) + ops[self.op] + self.right.show(0)
+
+
+class ExprStatement(Statement):
+	def __init__(self, context, expr):
+		Statement.__init__(self, context)
+		self.expr = expr
+
+	def reduce(self):
+		return self.expr.reduce()
+
+	def show(self, depth):
+		return self.expr.show(depth)
+
+class Value(Expression):
+	def __init__(self, context, value):
+		Expression.__init__(self, context)
+		self.value = value
+
+	def reduce(self):
+		return self.value
+
+	def show(self, depth):
+		return val_show(self.value)
+
+class Reference(Expression):
+	def __init__(self, context, id, value):
+		Expression.__init__(self, context)
+		self.id = id
+		self.value = value
+		self.reduced = False
+
+	def reduce(self):
+		self.reduced = True
+		self.context.report()
+		return self.value
+
+	def show(self, depth):
+		if self.reduced:
+			return val_show(self.value)
+		else:
+			return self.id
+
+
+
+
+context = None
+def initialize(reporter):
+	global context
+	'''
+	initialize :: Reporter -> ()
+
+	Initialize the program context with a
+	reporter, which is used to interact with
+	the user.
+	'''
+	context = ProgramContext(reporter)
+
+def function_def(name, initial_src, params, fn):
+	'''
+	function_def :: (string, [string], [string], Function) -> ()
+
+	Occurs when a function definition is finished
+	'''
+	context.nextStatement(FunctionDef(context, name, initial_src, params, fn))
+
+def assignment_statement(lval, value):
+	'''
+	assignment_statement :: (Ref, Expression a) -> a
+
+	Occurs before an assignment happens (ie, this is the expression of an
+	assignment)
+	'''
+	return context.nextStatement(AssignmentStatement(context, lval, value))
+
+def return_statement(value):
+	'''
+	return_statement :: Expression a -> a
+
+	Occurs before a return happens (ie, this is the expression of a return)
+	'''
+	return context.nextStatement(ReturnStatement(context, value))
+
+def lambda_expression(initial_src, params, fn):
+	'''
+	lambda_expression :: Function a -> LambdaExpression a
+
+	Wraps a lambda expression
+	'''
+	return LambdaExpression(context, initial_src, params, fn)
+
+def function_call(fn, *args):
+	'''
+	function_call :: (Function a, [any]) -> FunctionCall a
+
+	Wraps a function call
+	'''
+	return FunctionCall(context, fn, args)
+
+def binary_operation(left, op, right):
+	'''
+	binary_operation :: (Expression a, string, Expression a) -> BinaryOperation a
+
+	Wraps a binary operation
+	'''
+	return BinaryOperation(context, op, left, right)
+
+def expr_stmt(expr):
+	'''
+	expr_statement :: Expression a -> ()
+
+	Wraps an expression as statement
+	'''
+	context.nextStatement(ExprStatement(context, expr))
+
+def ref(id, value):
+	'''
+	'''
+	return Reference(context, id, value)
+
+# This should be done by the instrumenter at a later time
+# to allow specifying the reporter as cmd line argument
+initialize(CommandlineReporter())
+
+'''
 known_funcs = {}
 activated = []
 
@@ -88,3 +427,4 @@ class ActivationRecord:
 		self.fn = fn
 		self.args = args
 
+'''

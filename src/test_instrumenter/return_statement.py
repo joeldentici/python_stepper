@@ -15,9 +15,9 @@ def add(x, y):
 		expected = """
 def add(x, y):
 	if x > y:
-		return stepper_lib.return_statement('return x + y', x + y)
+		return stepper_lib.return_statement(x + y)
 	else:
-		return stepper_lib.return_statement('return x - y', x - y)
+		return stepper_lib.return_statement(x - y)
 		""".strip()
 
 		actual = instrumenter.instrument(src, "return_statement").strip()

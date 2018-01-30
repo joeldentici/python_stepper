@@ -14,8 +14,7 @@ def add(x, y):
 	return x + y
 
 
-stepper_lib.function_def(\"""def add(x, y):
-	return x + y\""", add)
+stepper_lib.function_def('add', ['return x + y'], ['x', 'y'], add)
 		""".strip()
 
 		actual = instrumenter.instrument(src, "function_def").strip()

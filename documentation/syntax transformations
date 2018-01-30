@@ -38,3 +38,22 @@ Assignment
 	Output:
 		<assignable-expr-list> = stepper_lib.assignment(<str(assignable-expr-list)>, <instrument(expr)>)
 
+
+
+def weird(a, b):
+	if a > b:
+		x = a + b
+	else:
+		x = a - b
+
+	return x
+
+weird(5, 10)
+
+-->
+
+def weird(a, b):
+	x = stepper_lib.assignment(stepper_lib.ref('x'), stepper_lib.val(''))
+	if stepper_lib.if_statement(stepper_lib.gt(stepper_lib.ref('a', a), stepper_lib.ref('b', b))):
+		x = stepper_lib.assignment(stepper_lib.ref('x'), stepper_lib.stepper_lib.ref(a))
+

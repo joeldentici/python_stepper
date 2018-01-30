@@ -35,6 +35,8 @@ def instrument(src, transformation = ""):
 	# add import of stepper_lib
 	return instrumented_src
 
+def stmtToStr(node):
+	return ast.Str(astor.to_source(node, '\t').strip())
 
 class InstrumentSource(ast.NodeTransformer):
 	def __init__(self, transformation):
@@ -58,15 +60,23 @@ class InstrumentSource(ast.NodeTransformer):
 		return node
 
 	def visit_FunctionDef(self, node):
-		expr_src = ast.Str(astor.to_source(node, '\t').strip())
+		initialStmts = [stmtToStr(x) for x in node.body]
+		initialStmts = ast.List(initialStmts, ast.Load())
 
 		self.generic_visit(node)
 		if not self.should_transform("function_def"):
 			return node
 
+		#names of parameters
+		params = [ast.Str(arg.arg) for arg in node.args.args]
+		params = ast.List(params, ast.Load())
+
+		#name of function
+		name = ast.Str(node.name)
+
 		instrumented = ast.Expr(ast.Call(\
 			ast.Name('stepper_lib.function_def', ast.Load()),\
-			[expr_src, ast.Name(node.name, ast.Load())],\
+			[name, initialStmts, params, ast.Name(node.name, ast.Load())],\
 			[],\
 		))
 
@@ -79,9 +89,13 @@ class InstrumentSource(ast.NodeTransformer):
 		if not self.should_transform("lambda_expression"):
 			return node
 
+
+		params = [ast.Str(arg.arg) for arg in node.args.args]
+		params = ast.List(params, ast.Load())
+
 		return ast.Call(\
 			ast.Name('stepper_lib.lambda_expression', ast.Load()),\
-			[expr_src, node],\
+			[expr_src, params, node],\
 			[],\
 		)
 
@@ -107,8 +121,6 @@ class InstrumentSource(ast.NodeTransformer):
 		return node
 
 	def visit_Call(self, node):
-		expr_src = ast.Str(astor.to_source(node, '\t').strip())
-
 		self.generic_visit(node)
 		if not self.should_transform("function_call"):
 			return node
@@ -118,28 +130,24 @@ class InstrumentSource(ast.NodeTransformer):
 
 		return ast.Call(\
 			ast.Name('stepper_lib.function_call', ast.Load()),\
-			[expr_src, func] + args,\
+			[func] + args,\
 			[],\
 		)
 
 	def visit_Return(self, node):
-		expr_src = ast.Str(astor.to_source(node, '\t').strip())
-
 		self.generic_visit(node)
 		if not self.should_transform("return_statement"):
 			return node
 
 		node.value = ast.Call(\
 			ast.Name('stepper_lib.return_statement', ast.Load()),\
-			[expr_src, node.value],\
+			[node.value],\
 			[],\
 		)
 
 		return node
 
 	def visit_BinOp(self, node):
-		expr_src = ast.Str(astor.to_source(node, '\t').strip())
-
 		self.generic_visit(node)
 		if not self.should_transform("binary_operation"):
 			return node
@@ -150,6 +158,31 @@ class InstrumentSource(ast.NodeTransformer):
 
 		return ast.Call(\
 			ast.Name('stepper_lib.binary_operation', ast.Load()),\
-			[expr_src, left, op, right],\
+			[left, op, right],\
 			[]\
 		)
+
+	def visit_Expr(self, node):
+		self.generic_visit(node)
+		if not self.should_transform("expr_stmt"):
+			return node
+
+		return ast.Expr(ast.Call(\
+			ast.Name('stepper_lib.expr_stmt', ast.Load()),\
+			[node.value],\
+			[]\
+		))
+
+	def visit_Name(self, node):
+		self.generic_visit(node)
+		if not self.should_transform('ref'):
+			return node
+
+		if (node.ctx.__class__.__name__ == 'Load'):
+			return ast.Call(\
+				ast.Name('stepper_lib.ref', ast.Load()),\
+				[ast.Str(node.id), node],\
+				[]\
+			)
+		else:
+			return node

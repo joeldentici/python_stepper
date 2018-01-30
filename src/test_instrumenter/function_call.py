@@ -16,7 +16,7 @@ def add(a, b):
 	return a + b
 
 
-stepper_lib.function_call('add(10, 11)', add, 10, 11)
+stepper_lib.function_call(add, 10, 11)
 		""".strip()
 
 		actual = instrumenter.instrument(src, "function_call").strip()

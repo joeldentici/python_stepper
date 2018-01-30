@@ -9,7 +9,7 @@ class TestBinaryOperation(unittest.TestCase):
 		""".strip()
 
 		expected = """
-stepper_lib.binary_operation('(5 + 6)', 5, 'Add', 6)
+stepper_lib.binary_operation(5, 'Add', 6)
 		""".strip()
 
 		actual = instrumenter.instrument(src, "binary_operation").strip()
