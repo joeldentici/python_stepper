@@ -75,7 +75,7 @@ class ProgramContext:
 	def report(self):
 		value = self.rootStmt.show(0)
 		# don't report the same state more than once
-		if value != self.lastReport:
+		if value != self.lastReport and self.notEmpty(value):
 			self.lastReport = value
 			self.reporter.report(value)
 
@@ -84,6 +84,9 @@ class ProgramContext:
 			return self.stmts[-1]
 		else:
 			return None
+
+	def notEmpty(self, value):
+		return value != '(*)(*)' and value != ''
 
 
 def visit(visitor, obj):
@@ -106,7 +109,9 @@ def val_show(v):
 	return repr(v)
 
 def indent(depth, value):
-	return ('\t' * depth) + value
+	lines = value.split("\n")
+	indentation = '\t' * depth
+	return "\n".join(indentation + x for x in lines)
 
 class Statement:
 	def __init__(self, context):
@@ -149,10 +154,10 @@ class FunctionDef(Statement):
 		self.fn = fn
 
 	def reduce(self):
-		pass
+		self.context.report()
 
 	def show(self, depth):
-		return ''
+		return self.active('')
 
 class LambdaExpression(Expression):
 	def __init__(self, context):
@@ -201,14 +206,17 @@ class FunctionCall(Expression):
 
 	def show(self, depth):
 		if self.result != None:
-			return val_show(self.result)
+			if self.result in self.context.knownFuncs:
+				return self.context.knownFuncs[self.result].name
+			else:
+				return val_show(self.result)
 
 		if self.step == 'show_call':
-			return self.called + '(' + ', '.join(a.show(0) for a in self.args) + ')'
+			return self.fn.show(0) + '(' + ', '.join(a.show(0) for a in self.args) + ')'
 
 		if self.step == 'user_function':
 			header = 'def ' + self.name + '(' + ', '.join(self.showArg(p, a) for p, a in zip(self.params, self.args)) + '):'
-			seen = '\n'.join(x.show(depth + 1) for x in self.seenStatements)
+			seen = '\n'.join(self.showStmt(x, i, depth) for i,x in enumerate(self.seenStatements))
 			num = len(self.seenStatements)
 			rest = '\n'.join(indent(depth + 1, x) for x in self.allStatements[num:])
 
@@ -221,6 +229,16 @@ class FunctionCall(Expression):
 
 	def showArg(self, p, a):
 		return p + '=' + a.show(0)
+
+	def showStmt(self, x, i, depth):
+		val = x.show(depth + 1)
+		default = indent(depth + 1, self.allStatements[i])
+		if val == '(*)(*)':
+			return '(*)' + default + '(*)'
+		elif val == '':
+			return default
+		else:
+			return val
 
 
 class ReturnStatement(Statement):
@@ -304,7 +322,7 @@ class Reference(Expression):
 		return self.value
 
 	def show(self, depth):
-		if self.reduced:
+		if self.reduced and not callable(self.value):
 			return val_show(self.value)
 		else:
 			return self.id
