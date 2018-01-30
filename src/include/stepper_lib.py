@@ -26,6 +26,7 @@ class ProgramContext:
 		self.rootStmt = None
 		self.knownFuncs = {}
 		self.active = []
+		self.lastReport = None
 
 
 	def nextStatement(self, stmt):
@@ -53,7 +54,11 @@ class ProgramContext:
 
 
 	def report(self):
-		self.reporter.report(self.rootStmt.show(0))
+		value = self.rootStmt.show(0)
+		# don't report the same state more than once
+		if value != self.lastReport:
+			self.lastReport = value
+			self.reporter.report(value)
 
 def visit(visitor, obj):
 	mName = 'visit'
@@ -73,6 +78,9 @@ def makeExpr(ctx, v):
 
 def val_show(v):
 	return repr(v)
+
+def indent(depth, value):
+	return ('\t' * depth) + value
 
 class Statement:
 	def __init__(self, context):
@@ -168,16 +176,16 @@ class FunctionCall(Expression):
 
 		if self.step == 'user_function':
 			header = 'def ' + self.name + '(' + ', '.join(self.showArg(p, a) for p, a in zip(self.params, self.args)) + '):'
-			seen = '\n'.join('*' + x.show(0) for x in self.seenStatements)
+			seen = '\n'.join(x.show(depth + 1) for x in self.seenStatements)
 			num = len(self.seenStatements)
-			rest = '\n'.join(self.allStatements[num:])
+			rest = '\n'.join(indent(depth + 1, x) for x in self.allStatements[num:])
 
 			if len(seen):
 				seen = '\n' + seen
 			if len(rest):
 				rest = '\n' + rest
 
-			return '<@ ' + header + seen + rest + ' @>'
+			return '<@\n' + indent(depth, header) + seen + rest + '\n' + indent(depth, '@>')
 
 	def showArg(self, p, a):
 		return p + '=' + a.show(0)
@@ -193,7 +201,7 @@ class ReturnStatement(Statement):
 		return result
 
 	def show(self, depth):
-		return 'return ' + self.value.show(0)
+		return indent(depth, 'return ' + self.value.show(depth))
 
 
 class BinaryOperation(Expression):
@@ -226,7 +234,7 @@ class BinaryOperation(Expression):
 		if self.value != None:
 			return val_show(self.value)
 		else:
-			return self.left.show(0) + ops[self.op] + self.right.show(0)
+			return self.left.show(depth) + ops[self.op] + self.right.show(depth)
 
 
 class ExprStatement(Statement):
