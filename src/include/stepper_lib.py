@@ -41,7 +41,7 @@ class ProgramContext:
 		self.knownFuncs = {}
 		self.active = []
 		self.lastReport = None
-		self.stmts = []
+		self.reducing = []
 
 
 	def nextStatement(self, stmt):
@@ -53,24 +53,12 @@ class ProgramContext:
 		if len(self.active):
 			self.active[-1].addStatement(stmt)
 
-		self.stmts.append(stmt)
-
-		stmt.accept(self)
 		result = stmt.reduce()
-
-		self.stmts.pop()
 
 		if root:
 			self.rootStmt = None
 
 		return result
-
-	def visit(self, stmt):
-		pass
-
-	def visit_FunctionDef(self, stmt):
-		self.knownFuncs[stmt.fn] = stmt
-
 
 	def report(self):
 		value = self.rootStmt.show(0)
@@ -79,11 +67,14 @@ class ProgramContext:
 			self.lastReport = value
 			self.reporter.report(value)
 
-	def activeStatement(self):
-		if len(self.stmts):
-			return self.stmts[-1]
-		else:
-			return None
+	def isActive(self, rc):
+		return len(self.reducing) and self.reducing[-1] == rc
+
+	def beginReducing(self, rc):
+		self.reducing.append(rc)
+
+	def endReducing(self, rc):
+		self.reducing.pop()
 
 	def notEmpty(self, value):
 		return value != '(*)(*)' and value != ''
@@ -100,7 +91,7 @@ def visit(visitor, obj):
 	return method(obj)
 
 def makeExpr(ctx, v):
-	if isinstance(v, Expression):
+	if isinstance(v, RuntimeComponent):
 		return v
 
 	return Value(ctx, v)
@@ -113,7 +104,7 @@ def indent(depth, value):
 	indentation = '\t' * depth
 	return "\n".join(indentation + x for x in lines)
 
-class Statement:
+class RuntimeComponent:
 	def __init__(self, context):
 		self.context = context
 
@@ -121,55 +112,61 @@ class Statement:
 		return visit(visitor, self)
 
 	def reduce(self):
-		raise Exception('Virtual reduce called!')
+		self.context.beginReducing(self)
+		result = self.doReduce()
+		self.context.endReducing(self)
+		return result
 
 	def show(self, depth):
-		raise Exception('Virtual show called!')
-
-	def active(self, val):
-		if self.context.activeStatement() == self:
+		val = self.doShow(depth)
+		if self.context.isActive(self):
 			return '(*)' + val + '(*)'
 		else:
 			return val
 
-class Expression:
-	def __init__(self, context):
-		self.context = context
-
-	def accept(self, visitor):
-		return visit(visitor, self)
-
-	def reduce(self):
-		raise Exception('Virtual reduce called!')
-
-	def show(self, depth):
-		raise Exception('Virtual show called!')
-
-class FunctionDef(Statement):
+class FunctionDef(RuntimeComponent):
 	def __init__(self, context, name, stmts, params, fn):
-		Statement.__init__(self, context)
+		RuntimeComponent.__init__(self, context)
+		self.context.knownFuncs[fn] = self
 		self.name = name
 		self.stmts = stmts
 		self.params = params
 		self.fn = fn
 
-	def reduce(self):
+	def doReduce(self):
 		self.context.report()
 
-	def show(self, depth):
-		return self.active('')
+	def doShow(self, depth):
+		return ''
 
-class LambdaExpression(Expression):
+	def display(self):
+		return self.name
+
+class LambdaExpression(RuntimeComponent):
+	def __init__(self, context, src, params, fn):
+		RuntimeComponent.__init__(self, context)
+		self.context.knownFuncs[fn] = self
+		self.stmts = [src]
+		self.params = params
+		self.fn = fn
+
+	def doReduce(self):
+		return self.fn
+
+	def doShow(self, depth):
+		return '(lambda ' + ", ".join(self.params) + ": " + self.stmts[0] + ')'
+
+	def display(self):
+		return self.doShow(0)
+
+
+class AssignmentStatement(RuntimeComponent):
 	def __init__(self, context):
-		Expression.__init__(self, context)
+		RuntimeComponent.__init__(self, context)
 
-class AssignmentStatement(Statement):
-	def __init__(self, context):
-		Statement.__init__(self, context)
-
-class FunctionCall(Expression):
+class FunctionCall(RuntimeComponent):
 	def __init__(self, context, fn, args):
-		Expression.__init__(self, context)
+		RuntimeComponent.__init__(self, context)
 		self.fn = fn
 		self.args = [makeExpr(self.context, x) for x in args]
 		self.result = None
@@ -180,7 +177,7 @@ class FunctionCall(Expression):
 	def addStatement(self, stmt):
 		self.seenStatements.append(stmt)
 
-	def reduce(self):
+	def doReduce(self):
 		# evaluate arguments
 		fn = self.fn.reduce()
 		args = []
@@ -191,27 +188,35 @@ class FunctionCall(Expression):
 		if fn in self.context.knownFuncs:
 			info = self.context.knownFuncs[fn]
 			self.params = info.params
-			self.allStatements = info.stmts
-			self.name = info.name
-			self.step = 'user_function'
+			if isinstance(info, FunctionDef):
+				self.name = info.name
+				self.allStatements = info.stmts
+				self.step = 'user_function'
+			else:
+				self.step = 'lambda'
 			self.context.report()
 
 		# make function call
 		self.context.active.append(self)
 		self.result = fn(*args)
+
+		if self.step == 'lambda':
+			self.result = self.result.reduce()
+
+		self.step = 'result_computed'
 		self.context.active.pop()
 		self.context.report()
 
 		return self.result
 
-	def show(self, depth):
-		if self.result != None:
+	def doShow(self, depth):
+		if self.step == 'result_computed':
 			if self.result in self.context.knownFuncs:
-				return self.context.knownFuncs[self.result].name
+				return self.context.knownFuncs[self.result].display()
 			else:
 				return val_show(self.result)
 
-		if self.step == 'show_call':
+		if self.step == 'show_call' or (self.step == 'lambda' and not self.result):
 			return self.fn.show(0) + '(' + ', '.join(a.show(0) for a in self.args) + ')'
 
 		if self.step == 'user_function':
@@ -227,6 +232,9 @@ class FunctionCall(Expression):
 
 			return '<@\n' + indent(depth, header) + seen + rest + '\n' + indent(depth, '@>')
 
+		if self.step == 'lambda' and self.result:
+			return self.result.show(depth)
+
 	def showArg(self, p, a):
 		return p + '=' + a.show(0)
 
@@ -241,28 +249,28 @@ class FunctionCall(Expression):
 			return val
 
 
-class ReturnStatement(Statement):
+class ReturnStatement(RuntimeComponent):
 	def __init__(self, context, value):
-		Statement.__init__(self, context)
+		RuntimeComponent.__init__(self, context)
 		self.value = makeExpr(context, value)
 
-	def reduce(self):
+	def doReduce(self):
 		result = self.value.reduce()
 		return result
 
-	def show(self, depth):
-		return self.active(indent(depth, 'return ' + self.value.show(depth)))
+	def doShow(self, depth):
+		return indent(depth, 'return ' + self.value.show(depth))
 
 
-class BinaryOperation(Expression):
+class BinaryOperation(RuntimeComponent):
 	def __init__(self, context, op, left, right):
-		Expression.__init__(self, context)
+		RuntimeComponent.__init__(self, context)
 		self.left = makeExpr(context, left)
 		self.op = op
 		self.right = makeExpr(context, right)
 		self.value = None
 
-	def reduce(self):
+	def doReduce(self):
 		ops = {
 			'Add': lambda x,y: x + y,
 			'Mult': lambda x,y: x * y
@@ -275,7 +283,7 @@ class BinaryOperation(Expression):
 
 		return self.value
 
-	def show(self, depth):
+	def doShow(self, depth):
 		ops = {
 			'Add': ' + ',
 			'Mult': ' * '
@@ -287,47 +295,48 @@ class BinaryOperation(Expression):
 			return self.left.show(depth) + ops[self.op] + self.right.show(depth)
 
 
-class ExprStatement(Statement):
+class ExprStatement(RuntimeComponent):
 	def __init__(self, context, expr):
-		Statement.__init__(self, context)
+		RuntimeComponent.__init__(self, context)
 		self.expr = expr
 
-	def reduce(self):
+	def doReduce(self):
+		self.context.report()
 		return self.expr.reduce()
 
-	def show(self, depth):
-		return self.active(indent(depth, self.expr.show(depth)))
+	def doShow(self, depth):
+		return indent(depth, self.expr.show(depth))
 
-class Value(Expression):
+class Value(RuntimeComponent):
 	def __init__(self, context, value):
-		Expression.__init__(self, context)
+		RuntimeComponent.__init__(self, context)
 		self.value = value
 
-	def reduce(self):
+	def doReduce(self):
 		return self.value
 
-	def show(self, depth):
+	def doShow(self, depth):
 		return val_show(self.value)
 
-class Reference(Expression):
+class Reference(RuntimeComponent):
 	def __init__(self, context, id, value):
-		Expression.__init__(self, context)
+		RuntimeComponent.__init__(self, context)
 		self.id = id
 		self.value = value
 		self.reduced = False
 
-	def reduce(self):
+	def doReduce(self):
 		self.reduced = True
 		self.context.report()
 		return self.value
 
-	def show(self, depth):
-		if self.reduced and not callable(self.value):
+	def doShow(self, depth):
+		if self.reduced and self.value in self.context.knownFuncs:
+			return self.context.knownFuncs[self.value].display()
+		elif self.reduced and not callable(self.value):
 			return val_show(self.value)
 		else:
 			return self.id
-
-
 
 
 context = None
@@ -407,82 +416,3 @@ def ref(id, value):
 # This should be done by the instrumenter at a later time
 # to allow specifying the reporter as cmd line argument
 initialize(CommandlineReporter())
-
-'''
-known_funcs = {}
-activated = []
-
-def function_def(src, fn):
-	known_funcs[fn] = src
-
-def lambda_expression(src, fn):
-	known_funcs[fn] = src
-	return fn
-
-def assignment_statement(lval, value):
-	show(reduction(assign(lval, value)))
-	return value
-
-def function_call(src, fn, *args):
-	if fn in known_funcs:
-		activated.append(ActivationRecord(src, fn, args))
-
-	result = fn(*args)
-
-	activated.pop()
-
-	return result
-
-def return_statement(src, value):
-	show(reduction('return ' + str(value)))
-	return value
-
-def binary_operation(src, left, op, right):
-	operations = {
-		'Add': lambda x, y: x + y,
-		'Sub': lambda x, y: x - y,
-		'Mult': lambda x, y: x * y,
-	}
-
-	display = {
-		'Add': '+',
-		'Sub': '-',
-		'Mult': '*'
-	}
-
-	result = operations[op](left, right)
-
-	reduction_part = reduction(str(left) + ' ' + display[op] + ' ' + str(right))
-	reduction_full = reduction_part + ' -> ' + statement(str(result))
-
-	show(reduction_full)
-
-	return result
-
-	
-
-def reduction(stmt):
-	active = activated[-1]
-
-	red = statement(active.src) + ' -> ' + statement(stmt)
-
-	return red
-
-def statement(stmt):
-	return '<@ ' + stmt + ' @>'
-
-def assign(lval, value):
-	return lval + ' = ' + str(value)
-
-def show(val):
-	print(val)
-	input()
-
-
-class ActivationRecord:
-	def __init__(self, src, fn, args):
-		self.src = src
-		self.fn = fn
-		self.args = args
-
-'''

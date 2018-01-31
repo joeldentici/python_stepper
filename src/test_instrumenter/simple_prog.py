@@ -5,12 +5,7 @@ class TestSimpleProg(unittest.TestCase):
 
 	def test_simple_prog(self):
 		src = """
-def add(x):
-	def f(y):
-		return x + y
-	return f
-
-add(5)(10)
+(lambda x: x + 1)(5)
 		""".strip()
 
 		expected = """
