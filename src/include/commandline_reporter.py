@@ -37,3 +37,28 @@ def state_to_string(state):
 		return list_state_to_string(state)
 	else:
 		return state
+
+#import re
+'''
+class CommandlineReporter:
+	def __init__(self):
+		pass
+
+	def report(self, val):
+		BOLD = '\033[1m'
+		ENDC = '\033[0m'
+		YELLOW = '\033[93m'
+
+		START = BOLD + YELLOW
+
+		val = re.sub(
+			r"(.*)\(\*\)(.*)\(\*\)(.*)",
+			r"\1" + START + r"\2" + ENDC + r"\3",
+			val,
+			flags=re.DOTALL
+		)
+
+		print(val)
+		input()
+
+'''
