@@ -230,3 +230,30 @@ class InstrumentSource(ast.NodeTransformer):
 			[node.test, node.body, node.orelse],\
 			[]\
 		)
+
+	def initial(self, body):
+		return ast.List([stmtToStr(x) for x in body], ast.Load())
+
+	def visit_If(self, node):
+		initial_body = self.initial(node.body)
+		initial_else = self.initial(node.orelse)
+		self.generic_visit(node)
+		if not self.should_transform('ifstmt'):
+			return node
+
+		new_test = ast.Call(\
+			ast.Name('stepper_lib.begin_if', ast.Load()),\
+			[node.test, initial_body, initial_else],\
+			[]\
+		)
+
+		# to call after end of if statement (after taken branch's block runs)
+		end = ast.Expr(ast.Call(\
+			ast.Name('stepper_lib.end_group', ast.Load()),\
+			[],\
+			[],\
+		))
+
+		new_node = ast.If(new_test, node.body, node.orelse)
+
+		return [new_node, end]

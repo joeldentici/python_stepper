@@ -36,6 +36,7 @@ def copy_lib(tmp):
 		'function_def.py',
 		'identifier.py',
 		'if_expr.py',
+		'if_stmt.py',
 		'lambda_expression.py',
 		'program.py',
 		'reducible.py',

@@ -21,6 +21,7 @@ from expr_statement import ExprStatement
 from identifier import Identifier
 from commandline_reporter import CommandlineReporter
 from if_expr import IfExpression
+from if_stmt import IfStatement
 
 
 context = None
@@ -100,6 +101,12 @@ def ref(id, value):
 
 def if_expr(test, t, f):
 	return IfExpression(context, test, t, f)
+
+def begin_if(test, t, f):
+	return context.evaluate_statement(IfStatement(context, test, t, f))
+
+def end_group():
+	context.active_statement_group().cleanup()
 
 # This should be done by the instrumenter at a later time
 # to allow specifying the reporter as cmd line argument

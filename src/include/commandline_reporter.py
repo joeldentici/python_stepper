@@ -21,7 +21,9 @@ def dict_state_to_string(state):
 		return "\n".join(state_to_string(x) for x in state["statements"] if x)
 		#return "\n".join(indent(x, 1) for x in stmts)
 	elif (state["type"] == "function_activation"):
-		return "{|\n" + indent(state_to_string(state["value"])) + "\n" + "|}"
+		return "{|\n" + indent(state_to_string(state["value"])) + "\n|}"
+	elif (state["type"] == "block"):
+		return indent(state_to_string(state["value"]))
 	elif (state["type"] == "statement"):
 		return state_to_string(state["value"])
 

@@ -77,6 +77,13 @@ class FunctionAppGroup(StatementGroup):
 
 		return self.result
 
+	def exit(self):
+		# handle early returns!
+		while (self.program.active_statement_group() != self):
+			self.program.pop_statement_group()
+
+		self.program.pop_statement_group()
+
 	def show(self):
 		if self.state == 'initial':
 			return {
