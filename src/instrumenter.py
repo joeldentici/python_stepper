@@ -153,14 +153,47 @@ class InstrumentSource(ast.NodeTransformer):
 			return node
 
 		left = node.left
-		op = ast.Str(node.op.__class__.__name__)
 		right = node.right
 
+		return self.makeBinOp(node.left, node.op, node.right)
+
+	def visit_BoolOp(self, node):
+		self.generic_visit(node)
+		if not self.should_transform('bool_operation'):
+			return node
+
+		left,right = node.values
+		return self.makeBinOp(left, node.op, right)
+
+	def visit_Compare(self, node):
+		self.generic_visit(node)
+		if not self.should_transform('compare_operation'):
+			return node
+
+		left = node.left
+		acc = None
+		for op,right in zip(node.ops, node.comparators):
+			comp = self.makeBinOp(left, op, right)
+			if acc == None:
+				acc = comp
+			else:
+				acc = self.makeBinOperator(acc, 'And', comp)
+			left = right
+
+
+		return acc
+
+	def makeBinOperator(self, left, op, right):
 		return ast.Call(\
 			ast.Name('stepper_lib.binary_operation', ast.Load()),\
-			[left, op, right],\
+			[left, ast.Str(op), right],\
 			[]\
-		)
+		)	
+
+	def makeBinOp(self, left, op, right):
+		op = op.__class__.__name__
+		return self.makeBinOperator(left, op, right)
+
 
 	def visit_Expr(self, node):
 		self.generic_visit(node)
@@ -186,3 +219,14 @@ class InstrumentSource(ast.NodeTransformer):
 			)
 		else:
 			return node
+
+	def visit_IfExp(self, node):
+		self.generic_visit(node)
+		if not self.should_transform('ifexpr'):
+			return node
+
+		return ast.Call(\
+			ast.Name('stepper_lib.if_expr', ast.Load()),\
+			[node.test, node.body, node.orelse],\
+			[]\
+		)

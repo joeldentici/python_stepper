@@ -1,4 +1,4 @@
-import re
+#import re
 
 '''
 stepper_lib
@@ -13,6 +13,7 @@ return the result of the reduction. Since Python is
 strictly evaluated, every reduction step results in a value.
 '''
 
+'''
 class CommandlineReporter:
 	def __init__(self):
 		pass
@@ -337,6 +338,17 @@ class Reference(RuntimeComponent):
 			return val_show(self.value)
 		else:
 			return self.id
+'''
+from binary_operation import BinaryOperation
+from program import Program
+from function_def import FunctionDef
+from function_call import FunctionCall
+from lambda_expression import LambdaExpression
+from return_statement import ReturnStatement
+from expr_statement import ExprStatement
+from identifier import Identifier
+from commandline_reporter import CommandlineReporter
+from if_expr import IfExpression
 
 
 context = None
@@ -349,7 +361,7 @@ def initialize(reporter):
 	reporter, which is used to interact with
 	the user.
 	'''
-	context = ProgramContext(reporter)
+	context = Program(reporter, 1)
 
 def function_def(name, initial_src, params, fn):
 	'''
@@ -357,7 +369,7 @@ def function_def(name, initial_src, params, fn):
 
 	Occurs when a function definition is finished
 	'''
-	context.nextStatement(FunctionDef(context, name, initial_src, params, fn))
+	context.evaluate_statement(FunctionDef(context, name, initial_src, params, fn))
 
 def assignment_statement(lval, value):
 	'''
@@ -366,7 +378,8 @@ def assignment_statement(lval, value):
 	Occurs before an assignment happens (ie, this is the expression of an
 	assignment)
 	'''
-	return context.nextStatement(AssignmentStatement(context, lval, value))
+	#return context.evaluate_statement(AssignmentStatement(context, lval, value))
+	return None
 
 def return_statement(value):
 	'''
@@ -374,7 +387,7 @@ def return_statement(value):
 
 	Occurs before a return happens (ie, this is the expression of a return)
 	'''
-	return context.nextStatement(ReturnStatement(context, value))
+	return context.evaluate_statement(ReturnStatement(context, value))
 
 def lambda_expression(initial_src, params, fn):
 	'''
@@ -406,12 +419,15 @@ def expr_stmt(expr):
 
 	Wraps an expression as statement
 	'''
-	context.nextStatement(ExprStatement(context, expr))
+	context.evaluate_statement(ExprStatement(context, expr))
 
 def ref(id, value):
 	'''
 	'''
-	return Reference(context, id, value)
+	return Identifier(context, id, value)
+
+def if_expr(test, t, f):
+	return IfExpression(context, test, t, f)
 
 # This should be done by the instrumenter at a later time
 # to allow specifying the reporter as cmd line argument

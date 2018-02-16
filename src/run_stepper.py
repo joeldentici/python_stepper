@@ -24,9 +24,32 @@ its stdin and stdout appropriately piped to the
 parent process stdin and stdout.
 '''
 
-location = os.path.dirname(os.path.abspath(__file__))
-# TODO: Use platform specific paths
-stepper_lib = location + '/include/stepper_lib.py'
+def copy_lib(tmp):
+	location = os.path.dirname(os.path.abspath(__file__))
+
+	# todo: read this from fs
+	files = [
+		'binary_operation.py',
+		'commandline_reporter.py',
+		'expr_statement.py',
+		'function_call.py',
+		'function_def.py',
+		'identifier.py',
+		'if_expr.py',
+		'lambda_expression.py',
+		'program.py',
+		'reducible.py',
+		'return_statement.py',
+		'statement_group.py',
+		'stepper_lib.py',
+		'value.py',
+	]
+
+	# TODO: Use platform specific paths
+	paths = (location + '/include/' + file for file in files)
+
+	for path in paths:
+		copy2(path, tmp)
 
 def run_stepper(script, src, args):
 	# instrument source code
@@ -37,7 +60,7 @@ def run_stepper(script, src, args):
 		# path to instrumented script
 		script_path = tmp + '/' + os.path.basename(script)
 
-		copy2(stepper_lib, tmp)
+		copy_lib(tmp)
 		# TODO: Use platform specific paths
 		# write instrumented script
 		with open(script_path, 'w') as f:

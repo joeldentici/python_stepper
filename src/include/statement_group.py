@@ -1,0 +1,77 @@
+'''
+StatementGroup
+written by Joel Dentici
+on 02/15/2018
+
+Represents a group of statements that run in sequence.
+'''
+
+class StatementGroup:
+	'''
+	StatementGroup class definition
+	'''
+	def __init__(self, program, stmts):
+		'''
+		__init__ :: (StatementGroup, Program, [string]) -> ()
+
+		Initializes the StatementGroup.
+		'''
+		self.program = program
+		self.original = stmts
+		self.active = []
+
+	def activate_statement(self, stmt):
+		'''
+		activate_statement :: (StatementGroup a, Reducible b) -> ()
+
+		Activates the next statement in the group.
+		'''
+		self.active.append(stmt)
+
+	def show(self):
+		'''
+		show :: StatementGroup a -> ProgramState
+
+		Gets the state of this group, which changes as its statements run.
+		'''
+		raise NotImplementedError("No show method implemented for this StatementGroup")
+
+	def base_show(self):
+		'''
+		base_show :: StatementGroup a -> ProgramState
+
+		Returns a list of ProgramState
+		'''
+		active = [x.show() for x in self.active]
+		original = self.original[len(self.active):]
+		return {
+			"type": "statement_group",
+			"statements": active + original
+		}
+
+	def enter(self):
+		self.program.push_statement_group(self)
+
+	def exit(self):
+		self.program.pop_statement_group()
+
+
+class RootStatementGroup(StatementGroup):
+	'''
+	RootStatementGroup class definition
+	'''
+	def __init__(self, program):
+		'''
+		__init__ :: (RootStatementGroup a, Program) -> ()
+
+		Initializes the RootStatementGroup.
+		'''
+		super().__init__(program, [])
+
+	def show(self):
+		'''
+		show :: RootStatementGroup a -> ProgramState
+
+		Gets the state of the root statement group.
+		'''
+		return self.base_show()
