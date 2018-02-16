@@ -55,6 +55,12 @@ class StatementGroup:
 	def exit(self):
 		self.program.pop_statement_group()
 
+	def reset(self):
+		self.active = []
+
+	def set_statements(self, stmts):
+		self.original = stmts
+
 
 class RootStatementGroup(StatementGroup):
 	'''

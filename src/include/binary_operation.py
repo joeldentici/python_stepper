@@ -7,6 +7,15 @@ perform_op = {
 	'And': lambda x,y: x and y,
 	'Or': lambda x,y: x or y,
 	"Lt": lambda x,y: x < y,
+	'Eq': lambda x,y: x == y,
+	'Gt': lambda x,y: x > y,
+	'GtE': lambda x,y: x >= y,
+	'LtE': lambda x,y: x <= y,
+	'NotEq': lambda x,y: x != y,
+	'Is': lambda x,y: x is y,
+	'IsNot': lambda x,y: x is not y,
+	'In': lambda x,y: x in y,
+	'NotIn': lambda x,y: x not in y,
 }
 
 show_op = {
@@ -16,6 +25,15 @@ show_op = {
 	'And': 'and',
 	'Or': 'or',
 	'Lt': '<',
+	'Eq': '==',
+	'Gt': '>',
+	'GtE': '>=',
+	'LtE': '<=',
+	'NotEq': '!=',
+	'Is': 'is',
+	'IsNot': 'is not',
+	'In': 'in',
+	'NotIn': 'not in'
 }
 
 def showop(op):

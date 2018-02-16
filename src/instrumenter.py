@@ -257,3 +257,45 @@ class InstrumentSource(ast.NodeTransformer):
 		new_node = ast.If(new_test, node.body, node.orelse)
 
 		return [new_node, end]
+
+	def visit_While(self, node):
+		initial_body = self.initial(node.body)
+		initial_else = self.initial(node.orelse)
+		self.generic_visit(node)
+		if not self.should_transform('whileloop'):
+			return node
+
+		initialize = ast.Expr(ast.Call(\
+			ast.Name('stepper_lib.begin_while', ast.Load()),\
+			[initial_body, initial_else],\
+			[]\
+		))
+
+		new_test = ast.Call(\
+			ast.Name('stepper_lib.while_test', ast.Load()),\
+			[node.test],\
+			[]\
+		)
+
+		# to call after end of if statement (after taken branch's block runs)
+		end = ast.Expr(ast.Call(\
+			ast.Name('stepper_lib.end_group', ast.Load()),\
+			[],\
+			[],\
+		))
+
+		# next iteration
+		loop_continue = ast.Expr(ast.Call(\
+			ast.Name('stepper_lib.loop_continue', ast.Load()),\
+			[],\
+			[],\
+		))
+
+		# after each iteration of the body, we need to end.
+		new_body = node.body + [loop_continue]
+
+		new_node = ast.While(new_test, new_body, node.orelse)
+
+		# we can put end here because the test will start the
+		# block again!
+		return [initialize, new_node, end]

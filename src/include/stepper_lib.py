@@ -22,7 +22,8 @@ from identifier import Identifier
 from commandline_reporter import CommandlineReporter
 from if_expr import IfExpression
 from if_stmt import IfStatement
-
+from while_loop import WhileLoop
+from assignment_statement import AssignmentStatement
 
 context = None
 def initialize(reporter):
@@ -52,7 +53,7 @@ def assignment_statement(lval, value):
 	assignment)
 	'''
 	#return context.evaluate_statement(AssignmentStatement(context, lval, value))
-	return None
+	return context.evaluate_statement(AssignmentStatement(context, lval, value))
 
 def return_statement(value):
 	'''
@@ -107,6 +108,19 @@ def begin_if(test, t, f):
 
 def end_group():
 	context.active_statement_group().cleanup()
+
+def loop_continue(explicit = False):
+	context.active_statement_group().loop_continue(explicit)
+
+def loop_break():
+	context.active_statement_group().loop_break()
+
+def begin_while(t, f):
+	context.evaluate_statement(WhileLoop(context, t, f))
+
+def while_test(test):
+	return context.active_statement_group().while_test(test)
+
 
 # This should be done by the instrumenter at a later time
 # to allow specifying the reporter as cmd line argument

@@ -29,6 +29,7 @@ def copy_lib(tmp):
 
 	# todo: read this from fs
 	files = [
+		'assignment_statement.py',
 		'binary_operation.py',
 		'commandline_reporter.py',
 		'expr_statement.py',
@@ -44,6 +45,7 @@ def copy_lib(tmp):
 		'statement_group.py',
 		'stepper_lib.py',
 		'value.py',
+		'while_loop.py',
 	]
 
 	# TODO: Use platform specific paths

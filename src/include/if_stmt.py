@@ -62,7 +62,7 @@ class IfBlock(StatementGroup):
 				"value": self.base_show()
 			}
 		elif self.state == 'done':
-			return 'None'
+			return '<if statement exited>'
 
 	def cleanup(self):
 		self.state = 'done'
