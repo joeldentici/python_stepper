@@ -1,4 +1,5 @@
 from report_state import state_to_string
+import sys
 
 class CommandlineReporter:
 	def __init__(self):
@@ -64,19 +65,21 @@ class CommandlineReporter:
 		self.location += increments[step]
 
 	def is_valid(self, step):
-		valid_steps = {'n', 'p'}
+		valid_steps = {'n', 'p', 'e'}
 		if step not in valid_steps:
 			return False
 		if step == "p" and self.location == 0:
 			return False
+		if step == "e":
+			sys.exit(0)
 
 		return True
 
 	def get_message(self):
 		if self.location == 0:
-			return "n: Next Step> "
+			return "e: Exit Stepper    n: Next Step> "
 		else:
-			return "p: Previous Step\tn: Next Step> "
+			return "e: Exit Stepper    p: Previous Step    n: Next Step> "
 
 
 
