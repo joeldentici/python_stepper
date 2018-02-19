@@ -7,12 +7,13 @@ class CommandlineReporter:
 
 	def report(self, old, new):
 		self.history.append((old, new))
-		self.show(self.history[-1])
+		self.location = len(self.history) - 1
+		self.interact()
 
-	def show(self, reduction):
+	def show(self):
 		print(chr(27) + "[2J")
 
-		old,new = reduction
+		old,new = self.current_reduction()
 
 		old_str = state_to_string(old, self.highlight(Color.YELLOW))
 		new_str = state_to_string(new, self.highlight(Color.YELLOW))
@@ -32,8 +33,6 @@ class CommandlineReporter:
 			print(self.pad(old_line, old_orig, old_max) + '\t|\t' + new_line)
 			i = i + 1
 
-		self.get_next_action()
-
 	def pad(self, line, orig, length):
 		padding_amount = length - len(orig)
 		return line + (" " * padding_amount)
@@ -42,7 +41,43 @@ class CommandlineReporter:
 	def highlight(self, color):
 		return lambda what: "\n".join(color + x + Color.ENDC for x in what.split("\n"))
 
-	def 
+	def interact(self):
+		while self.location < len(self.history):
+			self.show()
+			while True:
+				print("\n")
+				step = input(self.get_message()).lower()
+				if self.is_valid(step):
+					self.increment(step)
+					break
+				else:
+					print("Invalid step: " + step)
+
+	def current_reduction(self):
+		return self.history[self.location]
+
+	def increment(self, step):
+		increments = {
+			'n': 1,
+			'p': -1
+		}
+		self.location += increments[step]
+
+	def is_valid(self, step):
+		valid_steps = {'n', 'p'}
+		if step not in valid_steps:
+			return False
+		if step == "p" and self.location == 0:
+			return False
+
+		return True
+
+	def get_message(self):
+		if self.location == 0:
+			return "n: Next Step> "
+		else:
+			return "p: Previous Step\tn: Next Step> "
+
 
 
 class Color:
