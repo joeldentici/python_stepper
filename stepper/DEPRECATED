@@ -1,3 +1,0 @@
-This is only still hanging out here because I sometimes need to look at the proof of concept. For example, since Python is statement based, any free expressions need to be wrapped in a type of AST node called "Expr", which as it name implies is a statement composed entirely of an expression (well this doesn't need to be the case, but it is how the ast module works). Its nice to have this around because I already figured out these weird things before and I prefer not having to check out old commits to do that.
-
-This code is going to be removed at the first milestone completion.
