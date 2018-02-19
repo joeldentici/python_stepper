@@ -16,8 +16,8 @@ class CommandlineReporter:
 
 		old,new = self.current_reduction()
 
-		old_str = state_to_string(old, self.highlight(Color.YELLOW))
-		new_str = state_to_string(new, self.highlight(Color.YELLOW))
+		old_str = state_to_string(old, self.highlight(Color.RED))
+		new_str = state_to_string(new, self.highlight(Color.GREEN))
 
 		old_lines = old_str.split("\n")
 		new_lines = new_str.split("\n")
@@ -86,29 +86,5 @@ class CommandlineReporter:
 class Color:
 	BOLD = '\033[1m'
 	ENDC = '\033[0m'
-	YELLOW = '\033[93m'
-
-#import re
-'''
-class CommandlineReporter:
-	def __init__(self):
-		pass
-
-	def report(self, val):
-		BOLD = '\033[1m'
-		ENDC = '\033[0m'
-		YELLOW = '\033[93m'
-
-		START = BOLD + YELLOW
-
-		val = re.sub(
-			r"(.*)\(\*\)(.*)\(\*\)(.*)",
-			r"\1" + START + r"\2" + ENDC + r"\3",
-			val,
-			flags=re.DOTALL
-		)
-
-		print(val)
-		input()
-
-'''
+	GREEN = '\033[92m'
+	RED = '\033[91m'
