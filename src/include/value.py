@@ -5,8 +5,8 @@ class Value(Reducible):
 		super().__init__(program, 1)
 		self.value = value
 
-	def reduce(self):
+	def do_reduce(self):
 		return self.value
 
-	def show(self):
+	def do_show(self):
 		return self.program.show_value(self.value, '<unknown>')

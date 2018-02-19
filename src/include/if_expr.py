@@ -8,7 +8,7 @@ class IfExpression(Reducible):
 		self.false = self.program.wrap(f)
 		self.state = 'initial'
 
-	def reduce(self):
+	def do_reduce(self):
 		self.report()
 		truth = self.test.reduce()
 		self.taken = self.true if truth else self.false # lol!
@@ -21,7 +21,7 @@ class IfExpression(Reducible):
 
 		return self.value
 
-	def show(self):
+	def do_show(self):
 		if self.state == 'initial':
 			return [self.true.show(), ' if ', self.test.show(), ' else ', self.false.show()]
 		elif self.state == 'taken':

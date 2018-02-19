@@ -53,6 +53,10 @@ class StatementGroup:
 		self.program.push_statement_group(self)
 
 	def exit(self):
+		# handle early returns!
+		while (self.program.active_statement_group() != self):
+			self.program.pop_statement_group()
+
 		self.program.pop_statement_group()
 
 	def reset(self):

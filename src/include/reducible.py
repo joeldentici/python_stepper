@@ -29,7 +29,10 @@ class Reducible:
 		Implementations have the opportunity to ask the program to report
 		its state at any time.
 		'''
-		raise NotImplementedError("No reduce method implemented for this Reducible")
+		self.program.start_reducing(self)
+		result = self.do_reduce()
+		self.program.stop_reducing(self)
+		return result
 
 	def show(self):
 		'''
@@ -37,7 +40,14 @@ class Reducible:
 
 		Gets the state of this reducible, which changes as it is reduced.
 		'''
-		raise NotImplementedError("No show method implemented for this Reducible")
+		state = self.do_show()
+		if (self.program.is_reducing(self)):
+			return {
+				"type": "active_component",
+				"value": state
+			}
+		else:
+			return state
 
 	def report(self):
 		'''
@@ -46,3 +56,9 @@ class Reducible:
 		Asks the program to report its state.
 		'''
 		self.program.report(self.granularity)
+
+	def do_reduce(self):
+		raise NotImplementedError("No do_reduce method implemented for this Reducible")
+
+	def do_show(self):
+		raise NotImplementedError("No do_show method implemented for this Reducible")

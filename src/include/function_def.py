@@ -9,11 +9,11 @@ class FunctionDef(Reducible):
 		self.params = params
 		self.fn = fn
 
-	def reduce(self):
+	def do_reduce(self):
 		return self.fn
 
-	def show(self):
-		return ''
+	def do_show(self):
+		return '<TODO: Show FunctionDef>'
 
 	def display(self):
 		return self.name

@@ -1,6 +1,7 @@
 from statement_group import RootStatementGroup
 from reducible import Reducible
 from value import Value
+from report_state import state_to_string
 
 '''
 Program
@@ -29,6 +30,7 @@ class Program:
 		self.functions = {}
 		self.old_info = None
 		self.granularity = granularity
+		self.reducible_stack = []
 
 
 	def evaluate_statement(self, stmt):
@@ -66,11 +68,15 @@ class Program:
 			return
 
 		new_info = self.root_statement_group().show()
-		#difference = diff(self.old_info, new_info)
-		self.old_info = new_info
+		old_info = self.old_info
+		if old_info != None:
+			new_str = state_to_string(new_info)
+			old_str = state_to_string(old_info)
 
-		#self.reporter.report(difference)
-		self.reporter.report(new_info)
+			if new_str != old_str:
+				self.reporter.report(old_info, new_info)
+
+		self.old_info = new_info
 
 	def active_statement_group(self):
 		'''
@@ -120,3 +126,17 @@ class Program:
 			return val
 		else:
 			return Value(self, val)
+
+	def start_reducing(self, red):
+		self.reducible_stack.append(red)
+
+	def is_reducing(self, red):
+		return len(self.reducible_stack)\
+		 and self.reducible_stack[-1] == red
+
+	def stop_reducing(self, red):
+		# handle early returns!
+		while (not self.is_reducing(red)):
+			self.reducible_stack.pop()
+
+		self.reducible_stack.pop()

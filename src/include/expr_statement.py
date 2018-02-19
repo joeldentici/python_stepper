@@ -6,14 +6,14 @@ class ExprStatement(Reducible):
 		self.expr = self.program.wrap(expr)
 		self.state = 'initial'
 
-	def reduce(self):
+	def do_reduce(self):
 		self.report()
 		result = self.expr.reduce()
 		self.state = 'done'
 		self.report()
 		return result
 
-	def show(self):
+	def do_show(self):
 		if self.state == 'initial':
 			return {
 				"type": "statement",

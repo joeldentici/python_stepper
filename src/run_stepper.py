@@ -41,6 +41,7 @@ def copy_lib(tmp):
 		'lambda_expression.py',
 		'program.py',
 		'reducible.py',
+		'report_state.py',
 		'return_statement.py',
 		'statement_group.py',
 		'stepper_lib.py',

@@ -36,7 +36,7 @@ def instrument(src, transformation = ""):
 	return instrumented_src
 
 def stmtToStr(node):
-	return ast.Str(astor.to_source(node, '\t').strip())
+	return ast.Str(astor.to_source(node, '   ').strip())
 
 class InstrumentSource(ast.NodeTransformer):
 	def __init__(self, transformation):
@@ -83,7 +83,7 @@ class InstrumentSource(ast.NodeTransformer):
 		return [node, instrumented]
 
 	def visit_Lambda(self, node):
-		expr_src = ast.Str(astor.to_source(node, '\t').strip())
+		expr_src = ast.Str(astor.to_source(node, '   ').strip())
 
 		self.generic_visit(node)
 		if not self.should_transform("lambda_expression"):

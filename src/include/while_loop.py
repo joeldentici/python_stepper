@@ -16,11 +16,11 @@ class WhileLoop(Reducible):
 		self.true = t
 		self.false = f
 
-	def reduce(self):
+	def do_reduce(self):
 		self.loop = WhileLoopGroup(self.program, self.true, self.false)
 		self.loop.enter()
 
-	def show(self):
+	def do_show(self):
 		return self.loop.show()
 
 class WhileLoopGroup(StatementGroup):

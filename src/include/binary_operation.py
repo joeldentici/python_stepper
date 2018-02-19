@@ -67,9 +67,10 @@ class BinaryOperation(Reducible):
 		self.right = self.program.wrap(right)
 		self.state = 'initial'
 
-	def reduce(self):
+	def do_reduce(self):
 		left = self.left.reduce()
 		right = self.right.reduce()
+		self.report()
 		self.value = perform_op[self.op](left, right)
 		self.state = 'reduced'
 
@@ -77,7 +78,7 @@ class BinaryOperation(Reducible):
 
 		return self.value
 
-	def show(self):
+	def do_show(self):
 		if self.state == 'initial':
 			return [self.left.show(), showop(self.op), self.right.show()]
 		elif self.state == 'reduced':

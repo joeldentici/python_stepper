@@ -7,10 +7,10 @@ class LambdaExpression(Reducible):
 		self.src = src
 		self.fn = fn
 
-	def reduce(self):
+	def do_reduce(self):
 		return self.fn
 
-	def show(self):
+	def do_show(self):
 		return self.src
 
 	def display(self):

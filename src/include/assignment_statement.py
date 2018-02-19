@@ -6,11 +6,11 @@ class AssignmentStatement(Reducible):
 		self.lval = lval
 		self.expr = self.program.wrap(expr)
 
-	def reduce(self):
+	def do_reduce(self):
 		self.report()
 		return self.expr.reduce()
 
-	def show(self):
+	def do_show(self):
 		return {
 			"type": "statement",
 			"value": [self.lval, ' = ', self.expr.show()]

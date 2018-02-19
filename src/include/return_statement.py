@@ -5,10 +5,10 @@ class ReturnStatement(Reducible):
 		super().__init__(program, 1)
 		self.expr = self.program.wrap(expr)
 
-	def reduce(self):
+	def do_reduce(self):
 		return self.expr.reduce()
 
-	def show(self):
+	def do_show(self):
 		return {
 			"type": "statement",
 			"value": ['return ', self.expr.show()]

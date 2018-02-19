@@ -10,12 +10,14 @@ class FunctionCall(Reducible):
 		self.args = [self.program.wrap(x) for x in args]
 		self.state = 'initial'
 
-	def reduce(self):
+	def do_reduce(self):
 		self.report()
 		fn = self.fn.reduce()
 		args = [a.reduce() for a in self.args]
 
 		self.create_reducer(fn, args)
+
+		self.report()
 
 		self.state = 'reducing'
 
@@ -31,7 +33,7 @@ class FunctionCall(Reducible):
 		else:
 			self.reducer = UnknownApp(self.program, fn, args)
 
-	def show(self):
+	def do_show(self):
 		if self.state == 'initial':
 			return self.show_call()
 		if self.state == 'reducing':
@@ -77,13 +79,6 @@ class FunctionAppGroup(StatementGroup):
 
 		return self.result
 
-	def exit(self):
-		# handle early returns!
-		while (self.program.active_statement_group() != self):
-			self.program.pop_statement_group()
-
-		self.program.pop_statement_group()
-
 	def show(self):
 		if self.state == 'initial':
 			return {
@@ -101,7 +96,7 @@ class LambdaApp(Reducible):
 		self.info = info
 		self.state = 'initial'
 
-	def reduce(self):
+	def do_reduce(self):
 		fn = self.fn
 		args = self.args
 
@@ -113,7 +108,7 @@ class LambdaApp(Reducible):
 
 		return self.result
 
-	def show(self):
+	def do_show(self):
 		if self.state == 'initial':
 			return self.expr.show()
 		elif self.state == 'reduced':
@@ -126,7 +121,7 @@ class UnknownApp(Reducible):
 		self.args = args
 		self.state = 'initial'
 
-	def reduce(self):
+	def do_reduce(self):
 		fn = self.fn
 		args = self.args
 
@@ -137,7 +132,7 @@ class UnknownApp(Reducible):
 
 		return self.result
 
-	def show(self):
+	def do_show(self):
 		assert self.state != 'initial'
 		if self.state == 'reduced':
 			return self.program.show_value(self.result, '<unknown>')

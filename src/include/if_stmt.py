@@ -18,7 +18,7 @@ class IfStatement(Reducible):
 		self.false = f
 		self.state = 'initial'
 
-	def reduce(self):
+	def do_reduce(self):
 		self.report()
 
 		value = self.test.reduce() 
@@ -31,7 +31,7 @@ class IfStatement(Reducible):
 
 		return value
 
-	def show(self):
+	def do_show(self):
 		if self.state == 'initial':
 			return ['if ', self.test.show(), ':\n', \
 			  block(self.true)] + self.else_block()

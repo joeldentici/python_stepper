@@ -15,12 +15,13 @@ class Identifier(Reducible):
 		self.value = value
 		self.state = 'initial'
 
-	def reduce(self):
+	def do_reduce(self):
+		self.report()
 		self.state = 'reduced'
 		self.report()
 		return self.value
 
-	def show(self):
+	def do_show(self):
 		if self.state == 'initial':
 			return self.id
 		elif self.state == 'reduced':
