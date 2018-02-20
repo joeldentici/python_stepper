@@ -4,18 +4,15 @@ from statement_group import StatementGroup
 def block(what):
 	return {
 		"type": "block",
-		"value": {
-			"type": "statement_group",
-			"statements": what
-		}
+		"value": what
 	}
 
 class IfStatement(Reducible):
 	def __init__(self, program, test, t, f):
 		super().__init__(program, 1)
 		self.test = self.program.wrap(test)
-		self.true = t
-		self.false = f
+		self.true = IfBlock(self.program, t)
+		self.false = IfBlock(self.program, f)
 		self.state = 'initial'
 
 	def do_reduce(self):
@@ -23,9 +20,7 @@ class IfStatement(Reducible):
 
 		value = self.test.reduce() 
 
-		self.taken = IfBlock(self.program, self.true) \
-		  if value else IfBlock(self.program, self.false)
-		self.state = "taken"
+		self.taken = self.true if value else self.false
 
 		self.taken.reduce()
 
@@ -34,20 +29,18 @@ class IfStatement(Reducible):
 	def do_show(self):
 		if self.state == 'initial':
 			return ['if ', self.test.show(), ':\n', \
-			  block(self.true)] + self.else_block()
-		elif self.state == "taken":
-			return self.taken.show()
+			  self.true.show()] + self.else_block()
 
 	def else_block(self):
-		if len(self.false):
-			return ['\nelse:\n', block(self.false)]
+		if self.false.has_statements():
+			return ['\nelse:\n', self.false.show()]
 		else:
 			return []
 
 class IfBlock(StatementGroup):
 	def __init__(self, program, stmts):
 		super().__init__(program, stmts)
-		self.state = 'initial' if len(stmts) else 'done'
+		self.state = 'initial'
 		self.granularity = 1
 
 	def reduce(self):
@@ -57,14 +50,8 @@ class IfBlock(StatementGroup):
 
 	def show(self):
 		if self.state == 'initial':
-			return {
-				"type": "function_activation",
-				"value": self.base_show()
-			}
-		elif self.state == 'done':
-			return '<if statement exited>'
+			return block(self.base_show())
 
 	def cleanup(self):
-		self.state = 'done'
 		self.program.report(1)
 		self.exit()

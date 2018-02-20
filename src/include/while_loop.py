@@ -4,25 +4,55 @@ from statement_group import StatementGroup
 def block(what):
 	return {
 		"type": "block",
-		"value": {
-			"type": "statement_group",
-			"statements": what
-		}
+		"value": what
 	}
 
 class WhileLoop(Reducible):
 	def __init__(self, program, t, f):
 		super().__init__(program, 1)
-		self.true = t
-		self.false = f
+		self.true = WhileBlock(program, t, self)
+		self.false = WhileBlock(program, f, self)
 
 	def do_reduce(self):
-		self.loop = WhileLoopGroup(self.program, self.true, self.false)
-		self.loop.enter()
+		self.true.enter()
 
 	def do_show(self):
-		return self.loop.show()
+		return ['while ', self.test.show(), ':\n',\
+		self.true.show()] + self.else_block()
 
+	def else_block(self):
+		if self.false.has_statements():
+			return ['\nelse:\n', self.false.show()]
+		else:
+			return []
+
+	def while_test(self, test):
+		self.true.reset()
+		self.false.reset()
+		self.test = self.program.wrap(test)
+		self.program.report_clear(1)
+		value = self.test.reduce()
+		taken = self.true if value else self.false
+		taken.enter()
+		return value
+
+class WhileBlock(StatementGroup):
+	def __init__(self, program, stmts, loop):
+		super().__init__(program, stmts)
+		self.loop = loop
+
+	def while_test(self, test):
+		self.exit()
+		return self.loop.while_test(test)
+
+	def show(self):
+		return block(self.base_show())
+
+	def cleanup(self):
+		self.program.report(1)
+		self.exit()
+
+'''
 class WhileLoopGroup(StatementGroup):
 	def __init__(self, program, t, f):
 		super().__init__(program, [])
@@ -83,3 +113,5 @@ class WhileLoopGroup(StatementGroup):
 			return ['\nelse:\n', block(self.false)]
 		else:
 			return []
+
+'''

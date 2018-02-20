@@ -65,6 +65,9 @@ class StatementGroup:
 	def set_statements(self, stmts):
 		self.original = stmts
 
+	def has_statements(self):
+		return len(self.original) > 0
+
 
 class RootStatementGroup(StatementGroup):
 	'''

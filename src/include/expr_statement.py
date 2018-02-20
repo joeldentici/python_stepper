@@ -9,7 +9,6 @@ class ExprStatement(Reducible):
 	def do_reduce(self):
 		self.report()
 		result = self.expr.reduce()
-		self.state = 'done'
 		self.report()
 		return result
 
@@ -19,5 +18,3 @@ class ExprStatement(Reducible):
 				"type": "statement",
 				"value": self.expr.show()
 			}
-		elif self.state == 'done':
-			return '<statement evaluated>'

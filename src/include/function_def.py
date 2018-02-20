@@ -13,7 +13,19 @@ class FunctionDef(Reducible):
 		return self.fn
 
 	def do_show(self):
-		return '<TODO: Show FunctionDef>'
+		return ['def ', self.name, '(', self.show_params(), '):\n', self.show_body()]
+
+	def show_params(self):
+		return ", ".join(self.params)
+
+	def show_body(self):
+		return {
+			"type": "block",
+			"value": {
+				"type": "statement_group",
+				"statements": self.stmts
+			}
+		}
 
 	def display(self):
 		return self.name

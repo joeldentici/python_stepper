@@ -78,6 +78,10 @@ class Program:
 
 		self.old_info = new_info
 
+	def report_clear(self, granularity):
+		self.old_info = None
+		self.report(granularity)
+
 	def active_statement_group(self):
 		'''
 		active_statement_group :: Program -> StatementGroup

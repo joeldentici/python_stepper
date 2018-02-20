@@ -17,7 +17,6 @@ stepper_lib.begin_while(['a + b', 'b'], ['c'])
 while stepper_lib.while_test(x < 3):
 	a + b
 	b
-	stepper_lib.loop_continue()
 else:
 	c
 stepper_lib.end_group()

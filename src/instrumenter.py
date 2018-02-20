@@ -292,7 +292,7 @@ class InstrumentSource(ast.NodeTransformer):
 		))
 
 		# after each iteration of the body, we need to end.
-		new_body = node.body + [loop_continue]
+		new_body = node.body
 
 		new_node = ast.While(new_test, new_body, node.orelse)
 
