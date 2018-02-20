@@ -84,7 +84,6 @@ class CommandlineReporter:
 
 
 class Color:
-	BOLD = '\033[1m'
 	ENDC = '\033[0m'
-	GREEN = '\033[92m'
-	RED = '\033[91m'
+	GREEN = '\033[102m'
+	RED = '\033[101m'
