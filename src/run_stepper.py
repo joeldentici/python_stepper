@@ -39,6 +39,7 @@ def copy_lib(tmp):
 		'if_expr.py',
 		'if_stmt.py',
 		'lambda_expression.py',
+		'name_model.py',
 		'program.py',
 		'reducible.py',
 		'report_state.py',

@@ -71,6 +71,9 @@ class FunctionAppGroup(StatementGroup):
 		args = self.args
 
 		self.result = fn(*args)
+
+		self.program.report_clear(self.granularity)
+
 		self.state = 'reduced'
 
 		self.exit()
@@ -101,6 +104,7 @@ class LambdaApp(Reducible):
 		args = self.args
 
 		self.expr = fn(*args)
+		self.report()
 		self.result = self.expr.reduce()
 		self.state = 'reduced'
 

@@ -2,6 +2,7 @@ from statement_group import RootStatementGroup
 from reducible import Reducible
 from value import Value
 from report_state import state_to_string
+from name_model import NameModel
 
 '''
 Program
@@ -31,6 +32,7 @@ class Program:
 		self.old_info = None
 		self.granularity = granularity
 		self.reducible_stack = []
+		self.name_model = NameModel()
 
 
 	def evaluate_statement(self, stmt):
