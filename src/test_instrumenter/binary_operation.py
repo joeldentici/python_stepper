@@ -14,8 +14,6 @@ stepper_lib.binary_operation(5, 'Add', 6)
 
 		actual = instrumenter.instrument(src, "binary_operation").strip()
 
-		print(actual)
-
 		self.assertEqual(actual, expected)
 
 if __name__ == '__main__':

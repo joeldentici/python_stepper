@@ -37,7 +37,7 @@ def initialize(reporter):
 	'''
 	context = Program(reporter, 1)
 
-def function_def(name, initial_src, params, fn):
+def function_def(name, initial_src, params, fn, named_src):
 	'''
 	function_def :: (string, [string], [string], Function) -> ()
 
@@ -63,7 +63,7 @@ def return_statement(value):
 	'''
 	return context.evaluate_statement(ReturnStatement(context, value))
 
-def lambda_expression(initial_src, params, fn):
+def lambda_expression(initial_src, params, fn, named_src):
 	'''
 	lambda_expression :: Function a -> LambdaExpression a
 

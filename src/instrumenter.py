@@ -35,8 +35,30 @@ def instrument(src, transformation = ""):
 	# add import of stepper_lib
 	return instrumented_src
 
-def stmtToStr(node):
-	return ast.Str(astor.to_source(node, '   ').strip())
+def get_source(node, marked = False):
+	'''
+	mark_source :: ast -> string
+
+	Mark the "name" nodes, such as "x" as "<@ x @>"
+
+	This is used at runtime to rename variables before
+	statements/expressions become "active". We could probably
+	generate an expression tree from runtime calls like we do
+	for the stepping itself, and reconstruct source at runtime,
+	but this is the quick and dirty solution and it works.
+	'''
+	new_node = node
+	if marked:
+		orig_src = astor.to_source(node)
+		new_node = MarkNames().visit(ast.parse(orig_src))
+
+	new_src = ast.Str(astor.to_source(new_node, '   ').strip())
+	return new_src
+
+class MarkNames(ast.NodeTransformer):
+	def visit_Name(self, node):
+		new_name = '<@ ' + node.id + ' @>'
+		return ast.Name(new_name, node.ctx)
 
 class InstrumentSource(ast.NodeTransformer):
 	def __init__(self, transformation):
@@ -60,8 +82,8 @@ class InstrumentSource(ast.NodeTransformer):
 		return node
 
 	def visit_FunctionDef(self, node):
-		initialStmts = [stmtToStr(x) for x in node.body]
-		initialStmts = ast.List(initialStmts, ast.Load())
+		initialStmts = self.initial(node.body)
+		markedStmts = self.initial(node.body, 'mark names')
 
 		self.generic_visit(node)
 		if not self.should_transform("function_def"):
@@ -76,14 +98,15 @@ class InstrumentSource(ast.NodeTransformer):
 
 		instrumented = ast.Expr(ast.Call(\
 			ast.Name('stepper_lib.function_def', ast.Load()),\
-			[name, initialStmts, params, ast.Name(node.name, ast.Load())],\
+			[name, initialStmts, params, ast.Name(node.name, ast.Load()), markedStmts],\
 			[],\
 		))
 
 		return [node, instrumented]
 
 	def visit_Lambda(self, node):
-		expr_src = ast.Str(astor.to_source(node, '   ').strip())
+		expr_src = get_source(node)
+		expr_named = get_source(node.body, 'mark names')
 
 		self.generic_visit(node)
 		if not self.should_transform("lambda_expression"):
@@ -95,7 +118,7 @@ class InstrumentSource(ast.NodeTransformer):
 
 		return ast.Call(\
 			ast.Name('stepper_lib.lambda_expression', ast.Load()),\
-			[expr_src, params, node],\
+			[expr_src, params, node, expr_named],\
 			[],\
 		)
 
@@ -231,8 +254,8 @@ class InstrumentSource(ast.NodeTransformer):
 			[]\
 		)
 
-	def initial(self, body):
-		return ast.List([stmtToStr(x) for x in body], ast.Load())
+	def initial(self, body, marked = False):
+		return ast.List([get_source(x, marked) for x in body], ast.Load())
 
 	def visit_If(self, node):
 		initial_body = self.initial(node.body)
