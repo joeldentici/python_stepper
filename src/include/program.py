@@ -3,6 +3,7 @@ from reducible import Reducible
 from value import Value
 from report_state import state_to_string
 from name_model import NameModel
+import re
 
 '''
 Program
@@ -33,6 +34,7 @@ class Program:
 		self.granularity = granularity
 		self.reducible_stack = []
 		self.name_model = NameModel()
+		self.ws_pattern = re.compile(r'\s+')
 
 
 	def evaluate_statement(self, stmt):
@@ -75,10 +77,20 @@ class Program:
 			new_str = state_to_string(new_info)
 			old_str = state_to_string(old_info)
 
-			if new_str != old_str:
+			if self.different(new_str, old_str):
 				self.reporter.report(old_info, new_info)
 
 		self.old_info = new_info
+
+	def different(self, n, o):
+		# astor module wraps lines, so because we use that to generate
+		# initial statements, they don't match with the initial "show" result
+		# from our Reducible for the statement. So just remove whitespace as a
+		# hack...
+		n = re.sub(self.ws_pattern, '', n)
+		o = re.sub(self.ws_pattern, '', o)
+		return n != o
+
 
 	def report_clear(self, granularity):
 		self.old_info = None
