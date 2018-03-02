@@ -17,7 +17,7 @@ class StatementGroup:
 		Initializes the StatementGroup.
 		'''
 		self.program = program
-		self.original = stmts
+		self.set_statements(stmts)
 		self.active = []
 
 	def activate_statement(self, stmt):
@@ -42,8 +42,8 @@ class StatementGroup:
 
 		Returns a list of ProgramState
 		'''
-		active = [x.show() for x in self.active]
-		original = self.original[len(self.active):]
+		active = self.show_active()
+		original = self.show_original()
 		return {
 			"type": "statement_group",
 			"statements": active + original
@@ -63,18 +63,25 @@ class StatementGroup:
 		self.active = []
 
 	def set_statements(self, stmts):
-		self.original = stmts
+		self.original = [StrStmt(self.program, x) for x in stmts]
 
 	def has_statements(self):
 		return len(self.original) > 0
 
 	def ignore_stmt(self):
 		cur_stmt = self.original[len(self.active)]
-		self.activate_statement(StrStmt(cur_stmt))
+		self.activate_statement(cur_stmt)
+
+	def show_active(self):
+		return [x.show() for x in self.active]
+
+	def show_original(self):
+		return [x.show() for x in self.original[len(self.active):]]
 
 
 class StrStmt:
-	def __init__(self, stmt):
+	def __init__(self, program, stmt):
+		self.program = program
 		self.stmt = stmt
 
 	def show(self):
@@ -99,4 +106,24 @@ class RootStatementGroup(StatementGroup):
 
 		Gets the state of the root statement group.
 		'''
-		return self.base_show()
+		active = self.show_active()
+		original = self.show_original()
+
+		bindings = self.program.name_model.show()
+
+		ran = self.show_boundary('ran') + active[0:-1]
+		memory = self.show_boundary('memory') + bindings
+		current = self.show_boundary('running') + active[-1:]
+		future = original
+
+		return {
+			"type": "statement_group",
+			"statements": ran + memory + current + future
+		}
+
+	def show_boundary(self, text):
+		total_len = 50
+		text = ' ' + text + ' '
+		hashes = int((total_len - len(text)) / 2)
+		hash_text = '#' * hashes
+		return [hash_text + text + hash_text]

@@ -48,6 +48,8 @@ class Program:
 		'''
 		self.active_statement_group().activate_statement(stmt)
 
+		self.old_info = None
+
 		return stmt.reduce()
 
 	def report(self, granularity):

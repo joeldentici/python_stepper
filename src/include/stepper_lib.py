@@ -124,6 +124,11 @@ def while_test(test):
 def ignore_stmt():
 	context.active_statement_group().ignore_stmt()
 
+def module_statements(stmts):
+	context.active_statement_group().set_statements(stmts)
+
+def end_program():
+	context.reporter.end_program()
 
 # This should be done by the instrumenter at a later time
 # to allow specifying the reporter as cmd line argument

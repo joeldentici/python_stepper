@@ -119,13 +119,27 @@ class InstrumentSource(ast.NodeTransformer):
 		 self.used_transformation == transformation
 
 	def visit_Module(self, node):
+		initialStmts = self.initial(node.body)
+
 		self.generic_visit(node)
 		if not self.should_transform("module"):
 			return node
 
 		import_runtime = ast.Import([ast.alias("stepper_lib", None)])
 
-		node.body = [import_runtime] + node.body
+		set_initial = ast.Expr(ast.Call(\
+			ast.Name('stepper_lib.module_statements', ast.Load()),\
+			[initialStmts],\
+			[],\
+		))
+
+		end = ast.Expr(ast.Call(\
+			ast.Name('stepper_lib.end_program', ast.Load()),\
+			[],\
+			[],\
+		))
+
+		node.body = [import_runtime, set_initial] + node.body + [end]
 
 		return node
 

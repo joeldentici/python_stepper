@@ -12,7 +12,7 @@ the same way Python does.
 class NameModel:
 	def __init__(self):
 		self.scopes = []
-		self.current_scope = self.add_scope(NameScope())
+		self.current_scope = self.add_scope(GlobalNameScope())
 
 	def add_scope(self, scope):
 		self.scopes.append(scope)
@@ -23,7 +23,7 @@ class NameModel:
 		self.current_scope = scope
 
 	def show(self):
-		pass
+		return ['mem[0] = {a: 5}', 'x_1 = mem[0]']
 
 
 class NameScope:
@@ -39,6 +39,8 @@ class NameScope:
 	def set_number(self, num):
 		self.scope_number = num
 
+class GlobalNameScope(NameScope):
+	pass
 
 class Unbound:
 	pass

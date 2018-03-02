@@ -5,6 +5,7 @@ class CommandlineReporter:
 	def __init__(self):
 		self.prev = None
 		self.history = []
+		self.ended = False
 
 	def report(self, old, new):
 		self.history.append((old, new))
@@ -57,9 +58,15 @@ class CommandlineReporter:
 	def current_reduction(self):
 		return self.history[self.location]
 
+	def can_go_forward(self):
+		if not self.ended:
+			return True
+		else:
+			return self.location < len(self.history) - 1
+
 	def increment(self, step):
 		increments = {
-			'n': 1,
+			'n': 1 if self.can_go_forward() else 0,
 			'p': -1
 		}
 		self.location += increments[step]
@@ -80,6 +87,12 @@ class CommandlineReporter:
 			return "e: Exit Stepper    n: Next Step> "
 		else:
 			return "e: Exit Stepper    p: Previous Step    n: Next Step> "
+
+	def end_program(self):
+		self.ended = True
+		self.location -= 1
+		self.interact()
+
 
 
 
