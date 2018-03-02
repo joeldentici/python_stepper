@@ -68,6 +68,18 @@ class StatementGroup:
 	def has_statements(self):
 		return len(self.original) > 0
 
+	def ignore_stmt(self):
+		cur_stmt = self.original[len(self.active)]
+		self.activate_statement(StrStmt(cur_stmt))
+
+
+class StrStmt:
+	def __init__(self, stmt):
+		self.stmt = stmt
+
+	def show(self):
+		return self.stmt
+
 
 class RootStatementGroup(StatementGroup):
 	'''

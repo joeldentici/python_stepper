@@ -37,7 +37,7 @@ def initialize(reporter):
 	'''
 	context = Program(reporter, 1)
 
-def function_def(name, initial_src, params, fn, named_src, bindings):
+def function_def(name, initial_src, params, fn, named_src, as_bindings, nl_bindings, gl_bindings):
 	'''
 	function_def :: (string, [string], [string], Function) -> ()
 
@@ -120,6 +120,9 @@ def begin_while(t, f):
 
 def while_test(test):
 	return context.active_statement_group().while_test(test)
+
+def ignore_stmt():
+	context.active_statement_group().ignore_stmt()
 
 
 # This should be done by the instrumenter at a later time

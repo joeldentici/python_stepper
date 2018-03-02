@@ -59,13 +59,14 @@ def find_bindings(node):
 	recorder = RecordBindings()
 	recorder.visit(node)
 
-	return recorder.found()
+	return (recorder.found(), recorder.nlc, recorder.glb)
 
 class RecordBindings(ast.NodeTransformer):
 	def __init__(self):
 		self.first = True
 		self.names = set()
 		self.nlc = set()
+		self.glb = set()
 
 	# ignore nested functions
 	def visit_FunctionDef(self, node):
@@ -80,6 +81,11 @@ class RecordBindings(ast.NodeTransformer):
 			self.nlc.add(ident)
 		return node
 
+	def visit_Global(self, node):
+		for ident in node.names:
+			self.glb.add(ident)
+		return node
+
 	# assignments can introduce bindings
 	def visit_Name(self, node):
 		if (node.ctx.__class__.__name__ == 'Store'):
@@ -87,7 +93,7 @@ class RecordBindings(ast.NodeTransformer):
 		return node
 
 	def found(self):
-		return self.names - self.nlc
+		return self.names - (self.nlc | self.glb)
 
 class MarkNames(ast.NodeTransformer):
 	def visit_Name(self, node):
@@ -126,7 +132,7 @@ class InstrumentSource(ast.NodeTransformer):
 	def visit_FunctionDef(self, node):
 		initialStmts = self.initial(node.body)
 		markedStmts = self.initial(node.body, 'mark names')
-		body_bindings = find_bindings(node)
+		assign_bindings, nonlocal_bindings, global_bindings = find_bindings(node)
 
 		self.generic_visit(node)
 		if not self.should_transform("function_def"):
@@ -135,24 +141,25 @@ class InstrumentSource(ast.NodeTransformer):
 		#names of parameters
 		param_ids = [arg.arg for arg in node.args.args]
 
-		param_bindings = set(param_ids)
-		# note: bindings cannot be params and non-local so this is correct
-		bindings_set = body_bindings | param_bindings
-		bindings_list = sorted(bindings_set)
-
-		params = ast.List([ast.Str(x) for x in param_ids], ast.Load())
-		bindings = ast.List([ast.Str(x) for x in bindings_list], ast.Load())
+		params = self.ast_list(param_ids)
+		nl_bindings = self.ast_list(sorted(nonlocal_bindings))
+		gl_bindings = self.ast_list(sorted(global_bindings))
+		as_bindings = self.ast_list(sorted(assign_bindings - set(param_ids)))
 
 		#name of function
 		name = ast.Str(node.name)
 
 		instrumented = ast.Expr(ast.Call(\
 			ast.Name('stepper_lib.function_def', ast.Load()),\
-			[name, initialStmts, params, ast.Name(node.name, ast.Load()), markedStmts, bindings],\
+			[name, initialStmts, params, ast.Name(node.name, ast.Load()),\
+			 markedStmts, as_bindings, nl_bindings, gl_bindings],\
 			[],\
 		))
 
 		return [node, instrumented]
+
+	def ast_list(self, vals):
+		return ast.List([ast.Str(x) for x in vals], ast.Load())
 
 	def visit_Lambda(self, node):
 		expr_src = get_source(node)
@@ -372,3 +379,21 @@ class InstrumentSource(ast.NodeTransformer):
 		# we can put end here because the test will start the
 		# block again!
 		return [initialize, new_node, end]
+
+	def ignore_stmt(self, t, node):
+		if not self.should_transform(t):
+			return node
+
+		ignore = ast.Expr(ast.Call(\
+			ast.Name('stepper_lib.ignore_stmt', ast.Load()),\
+			[],\
+			[],\
+		))
+
+		return [node, ignore]
+
+	def visit_Nonlocal(self, node):
+		return self.ignore_stmt('nonlocal', node)
+
+	def visit_Global(self, node):
+		return self.ignore_stmt('global', node)
