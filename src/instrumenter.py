@@ -37,7 +37,7 @@ def instrument(src, transformation = ""):
 
 def get_source(node, marked = False):
 	'''
-	mark_source :: ast -> string
+	get_source :: ast -> string
 
 	Mark the "name" nodes, such as "x" as "<@ x @>"
 
@@ -55,9 +55,51 @@ def get_source(node, marked = False):
 	new_src = ast.Str(astor.to_source(new_node, '   ').strip())
 	return new_src
 
+def find_bindings(node):
+	recorder = RecordBindings()
+	recorder.visit(node)
+
+	return recorder.found()
+
+class RecordBindings(ast.NodeTransformer):
+	def __init__(self):
+		self.first = True
+		self.names = set()
+		self.nlc = set()
+
+	# ignore nested functions
+	def visit_FunctionDef(self, node):
+		if self.first:
+			self.first = False
+			self.generic_visit(node)
+
+		return node
+
+	def visit_Nonlocal(self, node):
+		for ident in node.names:
+			self.nlc.add(ident)
+		return node
+
+	# assignments can introduce bindings
+	def visit_Name(self, node):
+		if (node.ctx.__class__.__name__ == 'Store'):
+			self.names.add(node.id)
+		return node
+
+	def found(self):
+		return self.names - self.nlc
+
 class MarkNames(ast.NodeTransformer):
 	def visit_Name(self, node):
-		new_name = '<@ ' + node.id + ' @>'
+		marking = {
+			'Store': '@',
+			'Load': '@'
+		}
+
+		ctx = node.ctx.__class__.__name__
+		mark = marking[ctx]
+
+		new_name = '<' + mark + ' ' + node.id + ' ' + mark + '>'
 		return ast.Name(new_name, node.ctx)
 
 class InstrumentSource(ast.NodeTransformer):
@@ -84,21 +126,29 @@ class InstrumentSource(ast.NodeTransformer):
 	def visit_FunctionDef(self, node):
 		initialStmts = self.initial(node.body)
 		markedStmts = self.initial(node.body, 'mark names')
+		body_bindings = find_bindings(node)
 
 		self.generic_visit(node)
 		if not self.should_transform("function_def"):
 			return node
 
 		#names of parameters
-		params = [ast.Str(arg.arg) for arg in node.args.args]
-		params = ast.List(params, ast.Load())
+		param_ids = [arg.arg for arg in node.args.args]
+
+		param_bindings = set(param_ids)
+		# note: bindings cannot be params and non-local so this is correct
+		bindings_set = body_bindings | param_bindings
+		bindings_list = sorted(bindings_set)
+
+		params = ast.List([ast.Str(x) for x in param_ids], ast.Load())
+		bindings = ast.List([ast.Str(x) for x in bindings_list], ast.Load())
 
 		#name of function
 		name = ast.Str(node.name)
 
 		instrumented = ast.Expr(ast.Call(\
 			ast.Name('stepper_lib.function_def', ast.Load()),\
-			[name, initialStmts, params, ast.Name(node.name, ast.Load()), markedStmts],\
+			[name, initialStmts, params, ast.Name(node.name, ast.Load()), markedStmts, bindings],\
 			[],\
 		))
 

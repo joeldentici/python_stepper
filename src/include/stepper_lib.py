@@ -37,7 +37,7 @@ def initialize(reporter):
 	'''
 	context = Program(reporter, 1)
 
-def function_def(name, initial_src, params, fn, named_src):
+def function_def(name, initial_src, params, fn, named_src, bindings):
 	'''
 	function_def :: (string, [string], [string], Function) -> ()
 
