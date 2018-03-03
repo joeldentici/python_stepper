@@ -62,3 +62,26 @@ class Reducible:
 
 	def do_show(self):
 		raise NotImplementedError("No do_show method implemented for this Reducible")
+
+	def __getitem__(self, key):
+		return Indexer(self.program, self.granularity, self, self.program.wrap(key))
+
+class Indexer(Reducible):
+	def __init__(self, program, granularity, on, key):
+		super().__init__(program, granularity)
+		self.key = key
+		self.on = on
+		self.state = 'initial'
+
+	def do_reduce(self):
+		self.report()
+		val = self.on.reduce()
+		self.value = val[self.key.reduce()]
+		self.state = 'reduced'
+		return self.value
+
+	def do_show(self):
+		if self.state == 'initial':
+			return [self.on.show(), '[', self.key.show(), ']']
+		elif self.state == 'reduced':
+			return self.program.show_value(self.value, '<unknown>')

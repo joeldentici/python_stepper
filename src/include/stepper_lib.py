@@ -135,6 +135,10 @@ def end_program():
 	context.active_statement_group().set_ended()
 	context.report(1, True)
 
+def report(granularity):
+	context.report(granularity)
+	context.reducible_stack.pop()
+
 # This should be done by the instrumenter at a later time
 # to allow specifying the reporter as cmd line argument
 initialize(CommandlineReporter())

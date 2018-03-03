@@ -1,4 +1,5 @@
 from reducible import Reducible
+from report_state import rename_statement
 
 class AssignmentStatement(Reducible):
 	def __init__(self, program, lval, expr):
@@ -6,17 +7,23 @@ class AssignmentStatement(Reducible):
 		self.lval = lval
 		self.expr = self.program.wrap(expr)
 
-	def do_reduce(self):
+	def reduce(self):
+		self.program.start_reducing(self)
 		self.report()
 		result = self.expr.reduce()
 		self.program.report_clear(1)
-		self.program.name_model.bind(self.lval, result)
-		self.report()
+		if "." not in self.lval and "[" not in self.lval:
+			self.program.name_model.bind(self.clean_lval(), result)
 		return result
 
 	def do_show(self):
-		lval = self.program.name_model.resolve_name(self.lval)
 		return {
 			"type": "statement",
-			"value": [lval, ' = ', self.expr.show()]
+			"value": [self.get_lval(), ' = ', self.expr.show()]
 		}
+
+	def get_lval(self):
+		return rename_statement(self.program.name_model.current_scope, self.lval)
+
+	def clean_lval(self):
+		return self.lval.replace('<@ ', '').replace(' @>', '')

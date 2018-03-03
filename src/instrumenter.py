@@ -120,6 +120,7 @@ class InstrumentSource(ast.NodeTransformer):
 		ast.NodeTransformer.__init__(self)
 
 		self.used_transformation = transformation
+		self.no_name = False
 
 	def should_transform(self, transformation):
 		return self.used_transformation == "" or \
@@ -202,12 +203,14 @@ class InstrumentSource(ast.NodeTransformer):
 		)
 
 	def visit_Assign(self, node):
+		assignment_str = get_source(node, 'mark names').s
+		self.no_name = True
 		self.generic_visit(node)
+		self.no_name = False
 		if not self.should_transform("assignment_statement"):
 			return node
 
 		# note, this should be done without string manipulation
-		assignment_str = astor.to_source(node)
 		end = assignment_str.index(' =')
 		target_str = assignment_str[0:end]
 
@@ -220,7 +223,13 @@ class InstrumentSource(ast.NodeTransformer):
 			[],\
 		)
 
-		return node
+		report = ast.Expr(ast.Call(\
+			ast.Name('stepper_lib.report', ast.Load()),\
+			[ast.Num(1)],\
+			[],\
+		))
+
+		return [node, report]
 
 	def visit_Call(self, node):
 		self.generic_visit(node)
@@ -309,6 +318,9 @@ class InstrumentSource(ast.NodeTransformer):
 		))
 
 	def visit_Name(self, node):
+		if self.no_name:
+			return node
+
 		self.generic_visit(node)
 		if not self.should_transform('ref'):
 			return node

@@ -124,7 +124,7 @@ class RootStatementGroup(StatementGroup):
 
 		current = self.show_boundary('running') + active[-1:]
 		future = original
-		rest = current + future if not self.ended else []
+		rest = current + future if not self.ended else ['# Your Program Finished']
 
 
 		return {

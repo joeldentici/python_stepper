@@ -134,7 +134,7 @@ class Program:
 		self.functions[py_fn] = stepper_fn
 
 	def show_value(self, value, fallback):
-		if value in self.functions:
+		if value.__hash__ and value in self.functions:
 			return self.functions[value].display()
 		elif callable(value):
 			return fallback
@@ -142,6 +142,8 @@ class Program:
 			return repr(value)
 
 	def wrap(self, val):
+		self.name_model.maybe_add_to_memory(val)
+
 		if isinstance(val, Reducible):
 			return val
 		else:
