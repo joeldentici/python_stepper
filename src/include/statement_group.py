@@ -27,6 +27,8 @@ class StatementGroup:
 
 		Activates the next statement in the group.
 		'''
+		self.freeze_last()
+
 		self.active.append(stmt)
 
 	def show(self):
@@ -54,6 +56,8 @@ class StatementGroup:
 		self.program.push_statement_group(self)
 
 	def exit(self):
+		self.freeze_last()
+
 		# handle early returns!
 		while (self.program.active_statement_group() != self):
 			self.program.pop_statement_group()
@@ -63,6 +67,10 @@ class StatementGroup:
 	def reset(self):
 		self.active = []
 		self.rename_statements()
+
+	def freeze_last(self):
+		if len(self.active):
+			self.active[-1] = StrStmt(self.active[-1].show())
 
 	def set_statements(self, stmts):
 		self.original = stmts

@@ -76,8 +76,10 @@ class Indexer(Reducible):
 	def do_reduce(self):
 		self.report()
 		val = self.on.reduce()
+		self.report()
 		self.value = val[self.key.reduce()]
 		self.state = 'reduced'
+		self.report()
 		return self.value
 
 	def do_show(self):

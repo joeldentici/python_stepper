@@ -205,8 +205,9 @@ class InstrumentSource(ast.NodeTransformer):
 	def visit_Assign(self, node):
 		assignment_str = get_source(node, 'mark names').s
 		self.no_name = True
-		self.generic_visit(node)
+		node.targets = [self.visit(t) for t in node.targets]
 		self.no_name = False
+		node.value = self.visit(node.value)
 		if not self.should_transform("assignment_statement"):
 			return node
 
