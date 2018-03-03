@@ -28,16 +28,14 @@ $ src/run_stepper.py <path to Python script> <command line argument>*
 
 This will start the script you specify in the stepper. The stepper will allow you to step forward and backward as makes sense, and exit whenever you are ready.
 
-As of right now, the stepper automatically exits once your script finishes executing, but that is not the intended behavior. You should still be able to step backward and forward after your script finishes as long as you want. At some point, I will fix this.
-
 ## Milestones
 
 1. [x] Proof of Concept (Fall Quarter)
 1. [x] Basic reporting of reductions
 1. [x] Useful reporting of reductions
+1. [x] Proper tracking of mutation
 1. [ ] All basic syntactic forms covered
-1. [ ] Proper tracking of mutation
-1. [ ] Advanced syntactic forms 
+1. [ ] Advanced syntactic forms
 1. [ ] A beginning student friendly UI
 
 Definitions:
