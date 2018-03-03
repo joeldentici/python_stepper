@@ -1,13 +1,21 @@
 from reducible import Reducible
+from report_state import rename_statements
 
 class FunctionDef(Reducible):
-	def __init__(self, program, name, stmts, params, fn):
+	def __init__(self, program, name, stmts, params, fn,\
+	 named_stmts, as_bindings, nl_bindings, gl_bindings):
 		super().__init__(program, 1)
 		self.program.store_function(fn, self)
 		self.name = name
 		self.stmts = stmts
 		self.params = params
 		self.fn = fn
+		self.named_stmts = named_stmts
+		self.as_bindings = as_bindings
+		self.nl_bindings = nl_bindings
+		self.gl_bindings = gl_bindings
+		self.parent_scope = program.name_model.current_scope
+		self.renamed = rename_statements(self.parent_scope, named_stmts)
 
 	def do_reduce(self):
 		return self.fn
@@ -23,7 +31,7 @@ class FunctionDef(Reducible):
 			"type": "block",
 			"value": {
 				"type": "statement_group",
-				"statements": self.stmts
+				"statements": self.renamed
 			}
 		}
 

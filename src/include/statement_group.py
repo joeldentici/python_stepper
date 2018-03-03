@@ -1,3 +1,4 @@
+from report_state import rename_statements
 '''
 StatementGroup
 written by Joel Dentici
@@ -61,27 +62,30 @@ class StatementGroup:
 
 	def reset(self):
 		self.active = []
+		self.rename_statements()
 
 	def set_statements(self, stmts):
-		self.original = [StrStmt(self.program, x) for x in stmts]
+		self.original = stmts
+		self.renamed = self.original
 
 	def has_statements(self):
 		return len(self.original) > 0
 
 	def ignore_stmt(self):
-		cur_stmt = self.original[len(self.active)]
-		self.activate_statement(cur_stmt)
+		cur_stmt = self.renamed[len(self.active)]
+		self.activate_statement(StrStmt(cur_stmt))
 
 	def show_active(self):
 		return [x.show() for x in self.active]
 
 	def show_original(self):
-		return [x.show() for x in self.original[len(self.active):]]
+		return self.renamed[len(self.active):]
 
+	def rename_statements(self):
+		self.renamed = rename_statements(self.program.name_model.current_scope, self.original)
 
 class StrStmt:
-	def __init__(self, program, stmt):
-		self.program = program
+	def __init__(self, stmt):
 		self.stmt = stmt
 
 	def show(self):
@@ -99,6 +103,7 @@ class RootStatementGroup(StatementGroup):
 		Initializes the RootStatementGroup.
 		'''
 		super().__init__(program, [])
+		self.ended = False
 
 	def show(self):
 		'''
@@ -111,14 +116,20 @@ class RootStatementGroup(StatementGroup):
 
 		bindings = self.program.name_model.show()
 
-		ran = self.show_boundary('ran') + active[0:-1]
+		ran_stmts = active[0:-1] if not self.ended else active
+		ran = self.show_boundary('ran') + ran_stmts
+
 		memory = self.show_boundary('memory') + bindings
+
+
 		current = self.show_boundary('running') + active[-1:]
 		future = original
+		rest = current + future if not self.ended else []
+
 
 		return {
 			"type": "statement_group",
-			"statements": ran + memory + current + future
+			"statements": ran + memory + rest
 		}
 
 	def show_boundary(self, text):
@@ -127,3 +138,6 @@ class RootStatementGroup(StatementGroup):
 		hashes = int((total_len - len(text)) / 2)
 		hash_text = '#' * hashes
 		return [hash_text + text + hash_text]
+
+	def set_ended(self):
+		self.ended = True

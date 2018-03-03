@@ -43,7 +43,8 @@ def function_def(name, initial_src, params, fn, named_src, as_bindings, nl_bindi
 
 	Occurs when a function definition is finished
 	'''
-	context.evaluate_statement(FunctionDef(context, name, initial_src, params, fn))
+	context.evaluate_statement(FunctionDef(context, name, initial_src, params, fn,\
+	 named_src, as_bindings, nl_bindings, gl_bindings))
 
 def assignment_statement(lval, value):
 	'''
@@ -124,10 +125,15 @@ def while_test(test):
 def ignore_stmt():
 	context.active_statement_group().ignore_stmt()
 
-def module_statements(stmts):
+def module_statements(stmts, bindings):
 	context.active_statement_group().set_statements(stmts)
+	for b in bindings:
+		context.name_model.current_scope.create_binding(b)
 
 def end_program():
+	context.report_clear(1)
+	context.active_statement_group().set_ended()
+	context.report(1)
 	context.reporter.end_program()
 
 # This should be done by the instrumenter at a later time

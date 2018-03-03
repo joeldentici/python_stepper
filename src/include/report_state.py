@@ -1,4 +1,4 @@
-
+import re
 
 def indent(what):
 	lines = what.split("\n")
@@ -31,3 +31,9 @@ def state_to_string(state, active_transform = lambda x: x):
 		return list_state_to_string(state, active_transform)
 	else:
 		return state
+
+def rename_statements(scope, stmts):
+	def rename_statement(stmt):
+		return re.sub(r'<@ (.*?) @>', lambda o: scope.resolve_name(o.group(1)), stmt)
+
+	return [rename_statement(x) for x in stmts]

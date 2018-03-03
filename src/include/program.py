@@ -33,7 +33,7 @@ class Program:
 		self.old_info = None
 		self.granularity = granularity
 		self.reducible_stack = []
-		self.name_model = NameModel()
+		self.name_model = NameModel(self)
 		self.ws_pattern = re.compile(r'\s+')
 
 

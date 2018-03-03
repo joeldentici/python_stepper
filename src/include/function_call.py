@@ -1,7 +1,8 @@
 from reducible import Reducible
 from statement_group import StatementGroup
 from function_def import FunctionDef
-
+from name_model import NameScope
+import re
 
 class FunctionCall(Reducible):
 	def __init__(self, program, fn, args):
@@ -55,14 +56,20 @@ class FunctionCall(Reducible):
 
 class FunctionAppGroup(StatementGroup):
 	def __init__(self, program, fn, args, info):
-		super().__init__(program, info.stmts)
+		super().__init__(program, info.named_stmts)
 		self.fn = fn
 		self.args = args
 		self.info = info
 		self.state = 'initial'
 		self.granularity = 1
+		self.scope = FunctionAppScope(program, info, args)
 
 	def reduce(self):
+		old_scope = self.program.name_model.current_scope
+		self.program.name_model.add_scope(self.scope)
+		self.program.name_model.set_current_scope(self.scope)
+		self.reset()
+
 		self.program.report(1)
 
 		self.enter()
@@ -78,7 +85,10 @@ class FunctionAppGroup(StatementGroup):
 
 		self.exit()
 
+		self.program.name_model.set_current_scope(old_scope)
+
 		self.program.report(self.granularity)
+
 
 		return self.result
 
@@ -90,6 +100,33 @@ class FunctionAppGroup(StatementGroup):
 			}
 		elif self.state == 'reduced':
 			return self.program.show_value(self.result, '<unknown>')
+
+class FunctionAppScope(NameScope):
+	def __init__(self, program, info, args):
+		super().__init__(program)
+		self.info = info
+		self.displays = {}
+		self.parent_scope = info.parent_scope
+
+		for b in self.info.as_bindings:
+			self.create_binding(b)
+
+		# set values for parameter bindings
+		for i,b in enumerate(info.params):
+			self.bind(b, args[i])
+
+
+	def resolve_scope(self, name):
+		if name in self.info.gl_bindings:
+			return self.program.name_model.scopes[0].resolve_scope(name)
+		elif name in self.info.nl_bindings:
+			return self.parent_scope.resolve_scope(name)
+		elif name in self.info.as_bindings:
+			return self
+		elif name in self.info.params:
+			return self
+		else:
+			return self.parent_scope.resolve_scope(name)
 
 class LambdaApp(Reducible):
 	def __init__(self, program, fn, args, info):

@@ -55,15 +55,15 @@ def get_source(node, marked = False):
 	new_src = ast.Str(astor.to_source(new_node, '   ').strip())
 	return new_src
 
-def find_bindings(node):
-	recorder = RecordBindings()
+def find_bindings(node, first = True):
+	recorder = RecordBindings(first)
 	recorder.visit(node)
 
 	return (recorder.found(), recorder.nlc, recorder.glb)
 
 class RecordBindings(ast.NodeTransformer):
-	def __init__(self):
-		self.first = True
+	def __init__(self, first):
+		self.first = first
 		self.names = set()
 		self.nlc = set()
 		self.glb = set()
@@ -120,6 +120,7 @@ class InstrumentSource(ast.NodeTransformer):
 
 	def visit_Module(self, node):
 		initialStmts = self.initial(node.body)
+		bindings,_,__ = find_bindings(node, False)
 
 		self.generic_visit(node)
 		if not self.should_transform("module"):
@@ -129,7 +130,7 @@ class InstrumentSource(ast.NodeTransformer):
 
 		set_initial = ast.Expr(ast.Call(\
 			ast.Name('stepper_lib.module_statements', ast.Load()),\
-			[initialStmts],\
+			[initialStmts, self.ast_list(sorted(bindings))],\
 			[],\
 		))
 
@@ -329,8 +330,8 @@ class InstrumentSource(ast.NodeTransformer):
 		return ast.List([get_source(x, marked) for x in body], ast.Load())
 
 	def visit_If(self, node):
-		initial_body = self.initial(node.body)
-		initial_else = self.initial(node.orelse)
+		initial_body = self.initial(node.body, 'mark names')
+		initial_else = self.initial(node.orelse, 'mark names')
 		self.generic_visit(node)
 		if not self.should_transform('ifstmt'):
 			return node
@@ -353,8 +354,8 @@ class InstrumentSource(ast.NodeTransformer):
 		return [new_node, end]
 
 	def visit_While(self, node):
-		initial_body = self.initial(node.body)
-		initial_else = self.initial(node.orelse)
+		initial_body = self.initial(node.body, 'mark names')
+		initial_else = self.initial(node.orelse, 'mark names')
 		self.generic_visit(node)
 		if not self.should_transform('whileloop'):
 			return node

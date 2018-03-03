@@ -8,10 +8,15 @@ class AssignmentStatement(Reducible):
 
 	def do_reduce(self):
 		self.report()
-		return self.expr.reduce()
+		result = self.expr.reduce()
+		self.program.report_clear(1)
+		self.program.name_model.bind(self.lval, result)
+		self.report()
+		return result
 
 	def do_show(self):
+		lval = self.program.name_model.resolve_name(self.lval)
 		return {
 			"type": "statement",
-			"value": [self.lval, ' = ', self.expr.show()]
+			"value": [lval, ' = ', self.expr.show()]
 		}

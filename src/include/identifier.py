@@ -13,7 +13,7 @@ class Identifier(Reducible):
 		super().__init__(program, 1)
 		self.id = ident
 		self.value = value
-		self.state = 'initial'
+		self.state = 'reduced' # "autoreduce" identifiers in a statement
 
 	def do_reduce(self):
 		self.report()
@@ -22,7 +22,8 @@ class Identifier(Reducible):
 		return self.value
 
 	def do_show(self):
+		ident = self.program.name_model.resolve_name(self.id)
 		if self.state == 'initial':
-			return self.id
+			return ident
 		elif self.state == 'reduced':
-			return self.program.show_value(self.value, self.id)
+			return self.program.show_value(self.value, ident)
