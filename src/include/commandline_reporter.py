@@ -7,9 +7,10 @@ class CommandlineReporter:
 		self.history = []
 		self.ended = False
 
-	def report(self, old, new):
+	def report(self, old, new, end):
 		self.history.append((old, new))
 		self.location = len(self.history) - 1
+		self.ended = end
 		self.interact()
 
 	def show(self):
@@ -77,6 +78,8 @@ class CommandlineReporter:
 			return False
 		if step == "p" and self.location == 0:
 			return False
+		if step == "n" and self.location == len(self.history) - 1 and self.ended:
+			return False
 		if step == "e":
 			sys.exit(0)
 
@@ -85,13 +88,10 @@ class CommandlineReporter:
 	def get_message(self):
 		if self.location == 0:
 			return "e: Exit Stepper    n: Next Step> "
+		elif self.location == len(self.history) - 1 and self.ended:
+			return "e: Exit Stepper    p: Previous Step> "
 		else:
 			return "e: Exit Stepper    p: Previous Step    n: Next Step> "
-
-	def end_program(self):
-		self.ended = True
-		self.location -= 1
-		self.interact()
 
 
 

@@ -133,8 +133,7 @@ def module_statements(stmts, bindings):
 def end_program():
 	context.report_clear(1)
 	context.active_statement_group().set_ended()
-	context.report(1)
-	context.reporter.end_program()
+	context.report(1, True)
 
 # This should be done by the instrumenter at a later time
 # to allow specifying the reporter as cmd line argument

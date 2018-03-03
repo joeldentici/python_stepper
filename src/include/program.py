@@ -52,7 +52,7 @@ class Program:
 
 		return stmt.reduce()
 
-	def report(self, granularity):
+	def report(self, granularity, end = False):
 		'''
 		report :: Program -> ()
 
@@ -80,7 +80,7 @@ class Program:
 			old_str = state_to_string(old_info)
 
 			if self.different(new_str, old_str):
-				self.reporter.report(old_info, new_info)
+				self.reporter.report(old_info, new_info, end)
 
 		self.old_info = new_info
 
