@@ -1,0 +1,1 @@
+(lambda x: lambda x: x + x)(5)(5)

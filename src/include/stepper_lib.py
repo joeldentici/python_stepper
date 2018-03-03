@@ -70,7 +70,7 @@ def lambda_expression(initial_src, params, fn, named_src):
 
 	Wraps a lambda expression
 	'''
-	return LambdaExpression(context, initial_src, params, fn)
+	return LambdaExpression(context, initial_src, params, fn, named_src)
 
 def function_call(fn, *args):
 	'''

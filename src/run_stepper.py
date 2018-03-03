@@ -33,6 +33,7 @@ def copy_lib(tmp):
 		'binary_operation.py',
 		'commandline_reporter.py',
 		'expr_statement.py',
+		'function_app_scope.py',
 		'function_call.py',
 		'function_def.py',
 		'identifier.py',

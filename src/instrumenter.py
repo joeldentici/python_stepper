@@ -96,6 +96,13 @@ class RecordBindings(ast.NodeTransformer):
 		return self.names - (self.nlc | self.glb)
 
 class MarkNames(ast.NodeTransformer):
+
+	def visit_FunctionDef(self, node):
+		return node
+
+	def visit_LambdaExpression(self, node):
+		return node
+
 	def visit_Name(self, node):
 		marking = {
 			'Store': '@',

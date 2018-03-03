@@ -33,7 +33,7 @@ def state_to_string(state, active_transform = lambda x: x):
 		return state
 
 def rename_statements(scope, stmts):
-	def rename_statement(stmt):
-		return re.sub(r'<@ (.*?) @>', lambda o: scope.resolve_name(o.group(1)), stmt)
+	return [rename_statement(scope, x) for x in stmts]
 
-	return [rename_statement(x) for x in stmts]
+def rename_statement(scope, stmt):
+	return re.sub(r'<@ (.*?) @>', lambda o: scope.resolve_name(o.group(1)), stmt)

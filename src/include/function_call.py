@@ -1,8 +1,7 @@
 from reducible import Reducible
 from statement_group import StatementGroup
 from function_def import FunctionDef
-from name_model import NameScope
-import re
+from function_app_scope import FunctionAppScope
 
 class FunctionCall(Reducible):
 	def __init__(self, program, fn, args):
@@ -101,33 +100,6 @@ class FunctionAppGroup(StatementGroup):
 		elif self.state == 'reduced':
 			return self.program.show_value(self.result, '<unknown>')
 
-class FunctionAppScope(NameScope):
-	def __init__(self, program, info, args):
-		super().__init__(program)
-		self.info = info
-		self.displays = {}
-		self.parent_scope = info.parent_scope
-
-		for b in self.info.as_bindings:
-			self.create_binding(b)
-
-		# set values for parameter bindings
-		for i,b in enumerate(info.params):
-			self.bind(b, args[i])
-
-
-	def resolve_scope(self, name):
-		if name in self.info.gl_bindings:
-			return self.program.name_model.scopes[0].resolve_scope(name)
-		elif name in self.info.nl_bindings:
-			return self.parent_scope.resolve_scope(name)
-		elif name in self.info.as_bindings:
-			return self
-		elif name in self.info.params:
-			return self
-		else:
-			return self.parent_scope.resolve_scope(name)
-
 class LambdaApp(Reducible):
 	def __init__(self, program, fn, args, info):
 		super().__init__(program, 1)
@@ -135,8 +107,14 @@ class LambdaApp(Reducible):
 		self.args = args
 		self.info = info
 		self.state = 'initial'
+		self.scope = FunctionAppScope(program, info, args)
 
 	def do_reduce(self):
+		old_scope = self.program.name_model.current_scope
+		self.program.name_model.add_scope(self.scope)
+		self.program.name_model.set_current_scope(self.scope)
+		#self.reset()
+
 		fn = self.fn
 		args = self.args
 
@@ -144,6 +122,9 @@ class LambdaApp(Reducible):
 		self.report()
 		self.result = self.expr.reduce()
 		self.state = 'reduced'
+
+
+		self.program.name_model.set_current_scope(old_scope)
 
 		self.report()
 

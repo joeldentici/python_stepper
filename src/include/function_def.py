@@ -1,5 +1,6 @@
 from reducible import Reducible
 from report_state import rename_statements
+from function_app_scope import FunctionAppScope
 
 class FunctionDef(Reducible):
 	def __init__(self, program, name, stmts, params, fn,\
@@ -15,7 +16,8 @@ class FunctionDef(Reducible):
 		self.nl_bindings = nl_bindings
 		self.gl_bindings = gl_bindings
 		self.parent_scope = program.name_model.current_scope
-		self.renamed = rename_statements(self.parent_scope, named_stmts)
+		self.fake_scope = FunctionAppScope(program, self)
+		self.renamed = rename_statements(self.fake_scope, named_stmts)
 
 	def do_reduce(self):
 		return self.fn

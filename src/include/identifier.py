@@ -13,7 +13,7 @@ class Identifier(Reducible):
 		super().__init__(program, 1)
 		self.id = ident
 		self.value = value
-		self.state = 'reduced' # "autoreduce" identifiers in a statement
+		self.state = 'initial'
 
 	def do_reduce(self):
 		self.report()
