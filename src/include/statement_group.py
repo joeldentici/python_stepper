@@ -84,7 +84,7 @@ class StatementGroup:
 		self.activate_statement(StrStmt(cur_stmt))
 
 	def show_active(self):
-		return [x.show() for x in self.active]
+		return [x.show() for x in self.active[-1:]]
 
 	def show_original(self):
 		return self.renamed[len(self.active):]
@@ -124,8 +124,9 @@ class RootStatementGroup(StatementGroup):
 
 		bindings = self.program.name_model.show()
 
-		ran_stmts = active[0:-1] if not self.ended else active
-		ran = self.show_boundary('ran') + ran_stmts
+		#ran_stmts = active[0:-1] if not self.ended else active
+		#ran = self.show_boundary('ran') + ran_stmts
+		ran = []
 
 		memory = self.show_boundary('memory') + bindings
 

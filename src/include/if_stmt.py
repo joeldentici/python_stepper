@@ -21,6 +21,7 @@ class IfStatement(Reducible):
 		value = self.test.reduce() 
 
 		self.taken = self.true if value else self.false
+		self.state = 'taken'
 
 		self.taken.reduce()
 
@@ -29,11 +30,19 @@ class IfStatement(Reducible):
 	def do_show(self):
 		if self.state == 'initial':
 			return ['if ', self.test.show(), ':\n', \
-			  self.true.show()] + self.else_block()
+			  block(self.true.show())] + self.else_block()
+		elif self.state == 'taken':
+			return self.show_block(self.taken)
+
+	def show_block(self, block):
+		if block.has_statements():
+			return block.show()
+		else:
+			return []
 
 	def else_block(self):
 		if self.false.has_statements():
-			return ['\nelse:\n', self.false.show()]
+			return ['\nelse:\n', block(self.false.show())]
 		else:
 			return []
 
@@ -44,14 +53,16 @@ class IfBlock(StatementGroup):
 		self.granularity = 1
 
 	def reduce(self):
-		self.program.report(1)
+		if self.has_statements():
+			self.program.report(1)
 
 		self.enter()
 
 	def show(self):
 		if self.state == 'initial':
-			return block(self.base_show())
+			return self.base_show()
 
 	def cleanup(self):
-		self.program.report(1)
+		if self.has_statements():
+			self.program.report(1)
 		self.exit()

@@ -12,27 +12,50 @@ class WhileLoop(Reducible):
 		super().__init__(program, 1)
 		self.true = WhileBlock(program, t, self)
 		self.false = WhileBlock(program, f, self)
+		self.t = WhileBlock(program, t, self)
+		self.f = WhileBlock(program, f, self)
+		self.state = 'initial'
 
 	def do_reduce(self):
 		self.true.enter()
 
 	def do_show(self):
-		return ['while ', self.test.show(), ':\n',\
-		self.true.show()] + self.else_block()
+		if self.state == 'initial':
+			return self.show_loop(self.test.show())
+		elif self.state == 'taken':
+			return self.show_block(self.taken, '\n') + self.show_loop(self.test_start)
+		elif self.state == 'done':
+			return self.show_block(self.taken)
+
+	def show_loop(self, test):
+		return ['while ', test, ':\n',\
+		block(self.t.show())] + self.else_block()
+
+	def show_block(self, block, after = ''):
+		if block.has_statements():
+			return [block.show(), after]
+		else:
+			return []
 
 	def else_block(self):
-		if self.false.has_statements():
-			return ['\nelse:\n', self.false.show()]
+		if self.f.has_statements():
+			return ['\nelse:\n', block(self.f.show())]
 		else:
 			return []
 
 	def while_test(self, test):
 		self.true.reset()
 		self.false.reset()
+		self.t.reset()
+		self.f.reset()
+		self.state = 'initial'
 		self.test = self.program.wrap(test)
+		self.test_start = self.test.show()
 		self.program.report_clear(1)
 		value = self.test.reduce()
 		taken = self.true if value else self.false
+		self.state = 'taken' if value else 'done'
+		self.taken = taken
 		taken.enter()
 		return value
 
@@ -46,11 +69,14 @@ class WhileBlock(StatementGroup):
 		return self.loop.while_test(test)
 
 	def show(self):
-		return block(self.base_show())
+		return self.base_show()
 
 	def cleanup(self):
-		self.program.report(1)
+		if self.has_statements():
+			self.program.report(1)
 		self.exit()
+
+
 
 '''
 class WhileLoopGroup(StatementGroup):
