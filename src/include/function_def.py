@@ -1,6 +1,7 @@
 from reducible import Reducible
 from report_state import rename_statements
 from function_app_scope import FunctionAppScope
+from name_model import FunctionBinding
 
 class FunctionDef(Reducible):
 	def __init__(self, program, name, stmts, params, fn,\
@@ -16,6 +17,7 @@ class FunctionDef(Reducible):
 		self.nl_bindings = nl_bindings
 		self.gl_bindings = gl_bindings
 		self.parent_scope = program.name_model.current_scope
+		self.parent_scope.bind(self.name, FunctionBinding(self))
 		self.fake_scope = FunctionAppScope(program, self)
 		self.renamed = rename_statements(self.fake_scope, named_stmts)
 
@@ -23,7 +25,10 @@ class FunctionDef(Reducible):
 		return self.fn
 
 	def do_show(self):
-		return ['def ', self.name, '(', self.show_params(), '):\n', self.show_body()]
+		return self.show_with_name(self.name)
+
+	def show_with_name(self, name):
+		return ['def ', name, '(', self.show_params(), '):\n', self.show_body()]
 
 	def show_params(self):
 		return ", ".join(self.params)
@@ -38,4 +43,4 @@ class FunctionDef(Reducible):
 		}
 
 	def display(self):
-		return self.name
+		return self.parent_scope.show_name(self.name)

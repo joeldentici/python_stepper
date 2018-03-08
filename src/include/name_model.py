@@ -1,4 +1,3 @@
-
 '''
 NameModel
 written by Joel Dentici
@@ -79,17 +78,30 @@ class MemoryLocation:
 	def __repr__(self):
 		return 'mem[' + str(self.loc) + ']'
 
+class FunctionBinding:
+	def __init__(self, fndef):
+		self.fndef = fndef
+
+	def show(self, name):
+		return self.fndef.show_with_name(name) + ['\n']
+
 class NameScope:
 	def __init__(self, program):
 		self.names = {}
 		self.scope_number = 0
 		self.program = program
+		self.names_ordered = []
+
+	def _bind(self, name, val):
+		if name not in self.names:
+			self.names_ordered.append(name)
+		self.names[name] = val
 
 	def create_binding(self, name):
-		self.names[name] = None
+		self._bind(name, None)
 
 	def bind(self, name, val):
-		self.names[name] = self.program.name_model.resolve_memory(val)
+		self._bind(name, self.program.name_model.resolve_memory(val))
 
 	def set_number(self, num):
 		self.scope_number = num
@@ -100,13 +112,20 @@ class NameScope:
 		else:
 			return name
 
+	def show_binding(self, name):
+		value = self.names[name]
+		if isinstance(value, FunctionBinding):
+			return value.show(self.show_name(name))
+		else:
+			return self.show_name(name) + ' = ' + self.show_val(name)
+
 	def show_val(self, name):
 		value = self.names[name]
 		return self.program.show_value(value, '<function>')
 
 	def show(self):
-		names = sorted(self.names)
-		bindings = [self.show_name(n) + ' = ' + self.show_val(n) for n in names]
+		names = self.names_ordered
+		bindings = [self.show_binding(n) for n in names]
 		return bindings
 
 	def resolve_scope(self, name):

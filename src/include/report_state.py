@@ -36,4 +36,5 @@ def rename_statements(scope, stmts):
 	return [rename_statement(scope, x) for x in stmts]
 
 def rename_statement(scope, stmt):
-	return re.sub(r'<@ (.*?) @>', lambda o: scope.resolve_name(o.group(1)), stmt)
+	x = re.sub(r'<@ (.*?) @>', lambda o: scope.resolve_name(o.group(1)), stmt)
+	return x.replace('\n\n', '\n')
