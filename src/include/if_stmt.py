@@ -51,6 +51,7 @@ class IfBlock(StatementGroup):
 		super().__init__(program, stmts)
 		self.state = 'initial'
 		self.granularity = 1
+		self.reset()
 
 	def reduce(self):
 		if self.has_statements():

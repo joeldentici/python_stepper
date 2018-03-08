@@ -133,7 +133,10 @@ class Program:
 	def store_function(self, py_fn, stepper_fn):
 		self.functions[py_fn] = stepper_fn
 
-	def show_value(self, value, fallback):
+	def show_value(self, value, fallback, added = False):
+		if not added:
+			value = self.name_model.resolve_memory(value)
+
 		if value.__hash__ and value in self.functions:
 			return self.functions[value].display()
 		elif callable(value):
@@ -142,12 +145,12 @@ class Program:
 			return repr(value)
 
 	def wrap(self, val):
-		self.name_model.maybe_add_to_memory(val)
+		added = self.name_model.maybe_add_to_memory(val)
 
 		if isinstance(val, Reducible):
 			return val
 		else:
-			return Value(self, val)
+			return Value(self, val, added)
 
 	def start_reducing(self, red):
 		self.reducible_stack.append(red)

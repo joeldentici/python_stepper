@@ -112,6 +112,7 @@ class RootStatementGroup(StatementGroup):
 		'''
 		super().__init__(program, [])
 		self.ended = False
+		self.is_renamed = False
 
 	def show(self):
 		'''
@@ -119,6 +120,11 @@ class RootStatementGroup(StatementGroup):
 
 		Gets the state of the root statement group.
 		'''
+
+		if not self.is_renamed:
+			self.rename_statements()
+			self.is_renamed = True
+
 		active = self.show_active()
 		original = self.show_original()
 

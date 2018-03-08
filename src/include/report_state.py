@@ -33,6 +33,7 @@ def state_to_string(state, active_transform = lambda x: x):
 		return state
 
 def rename_statements(scope, stmts):
+	print(stmts)
 	return [rename_statement(scope, x) for x in stmts]
 
 def rename_statement(scope, stmt):

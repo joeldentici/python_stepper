@@ -1,11 +1,12 @@
 from name_model import NameScope
 
 class FunctionAppScope(NameScope):
-	def __init__(self, program, info, args = []):
+	def __init__(self, program, info, args = [], is_closure = False):
 		super().__init__(program)
 		self.info = info
 		self.displays = {}
 		self.parent_scope = info.parent_scope
+		self.is_closure = is_closure
 
 		for b in self.info.as_bindings:
 			self.create_binding(b)
@@ -27,3 +28,9 @@ class FunctionAppScope(NameScope):
 			return self
 		else:
 			return self.parent_scope.resolve_scope(name)
+
+	def show_name(self, name):
+		if self.is_closure:
+			return name
+		else:
+			return super().show_name(name)

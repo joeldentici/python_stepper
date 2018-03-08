@@ -18,7 +18,7 @@ class FunctionDef(Reducible):
 		self.gl_bindings = gl_bindings
 		self.parent_scope = program.name_model.current_scope
 		self.parent_scope.bind(self.name, FunctionBinding(self))
-		self.fake_scope = FunctionAppScope(program, self)
+		self.fake_scope = FunctionAppScope(program, self, [], True)
 		self.renamed = rename_statements(self.fake_scope, named_stmts)
 
 	def do_reduce(self):

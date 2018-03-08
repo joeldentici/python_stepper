@@ -1,3 +1,4 @@
+import re
 '''
 NameModel
 written by Joel Dentici
@@ -28,7 +29,7 @@ class NameModel:
 		mem = []
 
 		for i,x in enumerate(self.memory):
-			mem.append('mem[' + str(i) + ']' + ' = ' + self.program.show_value(self.mem_show(x), '<function>'))
+			mem.append(show_mem_name(str(i)) + ' = ' + self.program.show_value(self.mem_show(x), '<function>'))
 
 		for x in self.scopes:
 			mem += x.show()
@@ -45,9 +46,16 @@ class NameModel:
 
 	def maybe_add_to_memory(self, value):
 		if isinstance(value, dict):
-			self.store_value(value)
+			res = self.store_value(value)
+			for k in value:
+				self.maybe_add_to_memory(value[k])
+			return res
 		if isinstance(value, list):
-			self.store_value(value)
+			res = self.store_value(value)
+			for x in value:
+				self.maybe_add_to_memory(x)
+			return res
+		return False
 
 	def lookup_value(self, value):
 		if id(value) in self.memory_lookup:
@@ -57,6 +65,7 @@ class NameModel:
 		if self.lookup_value(value) == None:
 			self.memory_lookup[id(value)] = len(self.memory)
 			self.memory.append(value)
+			return True
 
 	def resolve_memory(self, value):
 		loc = self.lookup_value(value)
@@ -71,12 +80,15 @@ class NameModel:
 		if isinstance(value, list):
 			return [self.resolve_memory(v) for v in value]
 
+def show_mem_name(loc):
+	return 'mem_' + loc
+
 class MemoryLocation:
 	def __init__(self, loc):
 		self.loc = loc
 
 	def __repr__(self):
-		return 'mem[' + str(self.loc) + ']'
+		return show_mem_name(str(self.loc))
 
 class FunctionBinding:
 	def __init__(self, fndef):
@@ -106,7 +118,16 @@ class NameScope:
 	def set_number(self, num):
 		self.scope_number = num
 
+	def fix_conflicts(self, name):
+		if re.match(r'.*_\d+', name):
+			return '_' + name
+		else:
+			return name
+
+
 	def show_name(self, name):
+		name = self.fix_conflicts(name)
+
 		if self.scope_number:
 			return name + '_' + str(self.scope_number)
 		else:

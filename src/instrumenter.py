@@ -127,7 +127,7 @@ class InstrumentSource(ast.NodeTransformer):
 		 self.used_transformation == transformation
 
 	def visit_Module(self, node):
-		initialStmts = self.initial(node.body)
+		initialStmts = self.initial(node.body, 'mark names')
 		bindings,_,__ = find_bindings(node, False)
 
 		self.generic_visit(node)
