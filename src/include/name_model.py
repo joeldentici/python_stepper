@@ -124,9 +124,6 @@ class NameScope:
 		else:
 			return name
 
-	def _bound(self, name):
-		return self.names[name] is not Unbound
-
 	def show_name(self, name):
 		name = self.fix_conflicts(name)
 
@@ -137,7 +134,9 @@ class NameScope:
 
 	def show_binding(self, name):
 		value = self.names[name]
-		if isinstance(value, FunctionBinding):
+		if value is Unbound:
+			return '# ' + self.show_name(name) + ' is unbound'
+		elif isinstance(value, FunctionBinding):
 			return value.show(self.show_name(name))
 		else:
 			return self.show_name(name) + ' = ' + self.show_val(name)
@@ -148,7 +147,7 @@ class NameScope:
 
 	def show(self):
 		names = self.names_ordered
-		bindings = [self.show_binding(n) for n in names if self._bound(n)]
+		bindings = [self.show_binding(n) for n in names]
 		return bindings
 
 	def resolve_scope(self, name):
