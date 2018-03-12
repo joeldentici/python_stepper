@@ -1,4 +1,5 @@
 import re
+from reducible import Reducible
 '''
 NameModel
 written by Joel Dentici
@@ -44,6 +45,11 @@ class NameModel:
 	def bind(self, name, val):
 		self.current_scope.resolve_scope(name).bind(name, val)
 
+	def is_class(self, value):
+		return hasattr(value, '__dict__') and \
+		not isinstance(value, Reducible) and \
+		not callable(value)
+
 	def maybe_add_to_memory(self, value):
 		if isinstance(value, dict):
 			res = self.store_value(value)
@@ -55,6 +61,10 @@ class NameModel:
 			for x in value:
 				self.maybe_add_to_memory(x)
 			return res
+		if self.is_class(value):
+			res = self.store_value(value)
+			for k,v in vars(value).items():
+				self.maybe_add_to_memory(v)
 		return False
 
 	def lookup_value(self, value):
@@ -79,6 +89,8 @@ class NameModel:
 			return {k:self.resolve_memory(v) for k,v in value.items()}
 		if isinstance(value, list):
 			return [self.resolve_memory(v) for v in value]
+		if hasattr(value, '__dict__'):
+			return {k:self.resolve_memory(v) for k,v in vars(value).items()}
 
 def show_mem_name(loc):
 	return 'mem_' + loc

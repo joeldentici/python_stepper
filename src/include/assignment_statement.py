@@ -13,7 +13,12 @@ class AssignmentStatement(Reducible):
 		result = self.expr.reduce()
 		self.program.report_clear(1)
 		if "." not in self.lval and "[" not in self.lval:
-			self.program.name_model.bind(self.clean_lval(), result)
+			lvals = self.clean_lvals()
+			if len(lvals) > 1:
+				for i,name in enumerate(lvals):
+					self.program.name_model.bind(name, result[i])
+			else:
+				self.program.name_model.bind(lvals[0], result)
 		return result
 
 	def do_show(self):
@@ -25,5 +30,10 @@ class AssignmentStatement(Reducible):
 	def get_lval(self):
 		return rename_statement(self.program.name_model.current_scope, self.lval)
 
-	def clean_lval(self):
-		return self.lval.replace('<@ ', '').replace(' @>', '')
+	def clean_lval(self, lval):
+		return lval.replace('<@ ', '').replace(' @>', '')
+
+	def clean_lvals(self):
+		lval = self.lval
+		lvals = [x.strip() for x in lval.split(",")]
+		return [self.clean_lval(x) for x in lvals]

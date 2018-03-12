@@ -23,6 +23,7 @@ class Identifier(Reducible):
 
 	def do_show(self):
 		ident = self.program.name_model.resolve_name(self.id)
+		#self.program.name_model.bind(self.id, self.value)
 		if self.state == 'initial':
 			return ident
 		elif self.state == 'reduced':

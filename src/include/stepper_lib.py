@@ -24,6 +24,7 @@ from if_expr import IfExpression
 from if_stmt import IfStatement
 from while_loop import WhileLoop
 from assignment_statement import AssignmentStatement
+from attribute import Attribute
 
 context = None
 def initialize(reporter):
@@ -138,6 +139,9 @@ def end_program():
 def report(granularity):
 	context.report(granularity)
 	context.reducible_stack.pop()
+
+def attribute(left, ident):
+	return Attribute(context, left, ident)
 
 # This should be done by the instrumenter at a later time
 # to allow specifying the reporter as cmd line argument

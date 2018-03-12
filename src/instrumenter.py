@@ -1,6 +1,7 @@
 import ast
 import sys
 import astor
+import copy
 
 '''
 instrumenter
@@ -224,6 +225,9 @@ class InstrumentSource(ast.NodeTransformer):
 			[],\
 		)
 
+		return self.make_assign(node)
+
+	def make_assign(self, node):
 		report = ast.Expr(ast.Call(\
 			ast.Name('stepper_lib.report', ast.Load()),\
 			[ast.Num(1)],\
@@ -427,8 +431,61 @@ class InstrumentSource(ast.NodeTransformer):
 
 		return [node, ignore]
 
+	def visit_Attribute(self, node):
+		if self.no_name:
+			return node
+
+		self.generic_visit(node)
+		if not self.should_transform('attr'):
+			return node
+
+		if (node.ctx.__class__.__name__ == 'Load'):
+			return ast.Call(\
+				ast.Name('stepper_lib.attribute', ast.Load()),\
+				[node.value, ast.Str(node.attr)],\
+				[]\
+			)
+		else:
+			return node
+
 	def visit_Nonlocal(self, node):
 		return self.ignore_stmt('nonlocal', node)
 
 	def visit_Global(self, node):
 		return self.ignore_stmt('global', node)
+
+	def visit_Pass(self, node):
+		return self.ignore_stmt('pass', node)
+
+	def visit_Continue(self, node):
+		return self.ignore_stmt('continue', node)
+
+	def visit_Break(self, node):
+		return self.ignore_stmt('break', node)
+
+	def visit_AugAssign(self, node):
+		return self.ignore_stmt('aug_assign', node)
+
+	def visit_For(self, node):
+		return self.ignore_stmt('for', node)
+
+	def visit_ClassDef(self, node):
+		return self.ignore_stmt('classdef', node)
+
+	def visit_List(self, node):
+		return node
+
+	def visit_Dict(self, node):
+		return node
+
+	def visit_DictComp(self, node):
+		return node
+
+	def visit_SetComp(self, node):
+		return node
+
+	def visit_ListComp(self, node):
+		return node
+
+	def visit_Tuple(self, node):
+		return node

@@ -30,6 +30,7 @@ def copy_lib(tmp):
 	# todo: read this from fs
 	files = [
 		'assignment_statement.py',
+		'attribute.py',
 		'binary_operation.py',
 		'commandline_reporter.py',
 		'expr_statement.py',

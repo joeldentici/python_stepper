@@ -133,16 +133,26 @@ class Program:
 	def store_function(self, py_fn, stepper_fn):
 		self.functions[py_fn] = stepper_fn
 
-	def show_value(self, value, fallback, added = False):
-		if not added:
-			value = self.name_model.resolve_memory(value)
+	def has_function(self, fn):
+		return self.is_hashable(fn) and fn in self.functions
 
-		if value.__hash__ and value in self.functions:
+	def show_value(self, value, fallback, added = False):
+		#if not added:
+		value = self.name_model.resolve_memory(value)
+
+		if self.has_function(value):
 			return self.functions[value].display()
 		elif callable(value):
 			return fallback
 		else:
 			return repr(value)
+
+	def is_hashable(self, value):
+		try:
+			hash(value)
+			return True
+		except TypeError:
+			return False
 
 	def wrap(self, val):
 		added = self.name_model.maybe_add_to_memory(val)

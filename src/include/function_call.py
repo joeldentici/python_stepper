@@ -24,7 +24,7 @@ class FunctionCall(Reducible):
 		return self.reducer.reduce()
 
 	def create_reducer(self, fn, args):
-		if fn in self.program.functions:
+		if self.program.has_function(fn):
 			info = self.program.functions[fn]
 			if isinstance(info, FunctionDef):
 				self.reducer = FunctionAppGroup(self.program, fn, args, info)
@@ -86,6 +86,8 @@ class FunctionAppGroup(StatementGroup):
 
 		self.program.name_model.set_current_scope(old_scope)
 
+		self.program.name_model.maybe_add_to_memory(self.result)
+
 		self.program.report(self.granularity)
 
 
@@ -126,6 +128,8 @@ class LambdaApp(Reducible):
 
 		self.program.name_model.set_current_scope(old_scope)
 
+		self.program.name_model.maybe_add_to_memory(self.result)
+
 		self.report()
 
 		return self.result
@@ -149,6 +153,8 @@ class UnknownApp(Reducible):
 
 		self.result = fn(*args)
 		self.state = 'reduced'
+
+		self.program.name_model.maybe_add_to_memory(self.result)
 
 		self.report()
 
