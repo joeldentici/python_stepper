@@ -110,7 +110,7 @@ class NameScope:
 		self.names[name] = val
 
 	def create_binding(self, name):
-		self._bind(name, None)
+		self._bind(name, Unbound)
 
 	def bind(self, name, val):
 		self._bind(name, self.program.name_model.resolve_memory(val))
@@ -124,6 +124,8 @@ class NameScope:
 		else:
 			return name
 
+	def _bound(self, name):
+		return self.names[name] is not Unbound
 
 	def show_name(self, name):
 		name = self.fix_conflicts(name)
@@ -146,7 +148,7 @@ class NameScope:
 
 	def show(self):
 		names = self.names_ordered
-		bindings = [self.show_binding(n) for n in names]
+		bindings = [self.show_binding(n) for n in names if self._bound(n)]
 		return bindings
 
 	def resolve_scope(self, name):
@@ -156,4 +158,7 @@ class NameScope:
 		return self.resolve_scope(name).show_name(name)
 
 class GlobalNameScope(NameScope):
+	pass
+
+class Unbound:
 	pass
