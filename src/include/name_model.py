@@ -52,19 +52,19 @@ class NameModel:
 
 	def maybe_add_to_memory(self, value):
 		if isinstance(value, dict):
-			res = self.store_value(value)
 			for k in value:
 				self.maybe_add_to_memory(value[k])
+			res = self.store_value(value)
 			return res
 		if isinstance(value, list):
-			res = self.store_value(value)
 			for x in value:
 				self.maybe_add_to_memory(x)
+			res = self.store_value(value)
 			return res
 		if self.is_class(value):
-			res = self.store_value(value)
 			for k,v in vars(value).items():
 				self.maybe_add_to_memory(v)
+			res = self.store_value(value)
 		return False
 
 	def lookup_value(self, value):
@@ -90,7 +90,7 @@ class NameModel:
 		if isinstance(value, list):
 			return [self.resolve_memory(v) for v in value]
 		if hasattr(value, '__dict__'):
-			return {k:self.resolve_memory(v) for k,v in vars(value).items()}
+			return ClassMemory(value, self)
 
 def show_mem_name(loc):
 	return 'mem_' + loc
@@ -108,6 +108,18 @@ class FunctionBinding:
 
 	def show(self, name):
 		return self.fndef.show_with_name(name) + ['\n']
+
+class ClassMemory:
+	def __init__(self, value, nm):
+		self.value = value
+		self.class_name = value.__class__.__name__
+		self.nm = nm
+
+	def __repr__(self):
+		value = self.value
+		nm = self.nm
+		bindings = {k:nm.resolve_memory(v) for k,v in vars(value).items()}
+		return repr(bindings)
 
 class NameScope:
 	def __init__(self, program):
