@@ -119,6 +119,7 @@ class ClassMemory:
 		value = self.value
 		nm = self.nm
 		bindings = {k:nm.resolve_memory(v) for k,v in vars(value).items()}
+		bindings['__class__'] = self.class_name
 		return repr(bindings)
 
 class NameScope:
